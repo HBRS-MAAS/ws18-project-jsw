@@ -1,10 +1,11 @@
-# MAAS Project - <Team Name>
+# MAAS Project - JSW
 
 Add a brief description of your project. Make sure to keep this README updated, particularly on how to run your project from the **command line**.
 
 ## Team Members
-* Name1 LastName1 - [@githubusername](https://github.com/username)
-* Name2 LastName2 - [@githubusername](https://github.com/username)
+* Janhavi Puranik - [@janhavi19](https://github.com/janhavi19)
+* Shahamat Mehdi - [@SSMAbidi](https://github.com/ssmabidi)
+* Widya Aulia - [@widyaaulia](https://github.com/widyaaulia)
 
 ## Dependencies
 * JADE v.4.5.0
