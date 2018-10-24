@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7e250960350b4dba8b4e031e3d2b2918)](https://app.codacy.com/app/ssmabidi/ws18-project-jsw?utm_source=github.com&utm_medium=referral&utm_content=HBRS-MAAS/ws18-project-jsw&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/HBRS-MAAS/ws18-project-jsw.svg?branch=master)](https://travis-ci.org/HBRS-MAAS/ws18-project-jsw)
 # MAAS Project - JSW
 
