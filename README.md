@@ -1,4 +1,7 @@
 [![Build Status](https://travis-ci.org/HBRS-MAAS/ws18-project-jsw.svg?branch=master)](https://travis-ci.org/HBRS-MAAS/ws18-project-jsw)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f30dbe2a3b6643d383ffa340370fe071)](https://www.codacy.com/app/ssmabidi/ws18-project-jsw?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=HBRS-MAAS/ws18-project-jsw&amp;utm_campaign=Badge_Grade)
+[![Coverage Status](https://coveralls.io/repos/github/HBRS-MAAS/ws18-project-jsw/badge.svg?branch=master)](https://coveralls.io/github/HBRS-MAAS/ws18-project-jsw?branch=master)
+
 # MAAS Project - JSW
 
 Add a brief description of your project. Make sure to keep this README updated, particularly on how to run your project from the **command line**.
