@@ -9,7 +9,8 @@ Add a brief description of your project. Make sure to keep this README updated, 
 
 ## Dependencies
 * JADE v.4.5.0
-* ...
+* Java 8
+* Gradle
 
 ## How to run
 Just install gradle and run:
