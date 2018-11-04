@@ -41,21 +41,21 @@ public class CustomerAgent extends Agent {
 			initializeTargetProducts();
 			acquiredProducts = new Vector<>();
 
-			System.out.println(getAID().getName()+ " will try to buy  "+targetProducts);
+			System.out.println(getAID().getName()+ " will try to buy  "+targetProducts.toString());
 
 			registerCustomer();
 
 			// Add a TickerBehaviour for each targetBook
-			for (String targetProducts : targetProducts) {
+			for (final String targetProduct : targetProducts) {
 				addBehaviour(new TickerBehaviour(this, 5000) {
 					protected void onTick() {
-						System.out.println(getAID().getLocalName()+"is trying to buy "+targetProducts);
+						System.out.println(getAID().getLocalName()+"is trying to buy "+targetProduct);
 
 						// Update bakery's around
 						getBakeryAgents(myAgent);
 
-						if(acquiredProducts.contains(targetProducts)){
-							System.out.println(getAID().getLocalName()+" has already bought" + targetProducts);
+						if(acquiredProducts.contains(targetProduct)){
+							System.out.println(getAID().getLocalName()+" has already bought" + targetProduct);
 							printAcquiredProducts();
 							// Check the number of Products bought 
 							checkNBoughtProducts();
@@ -64,7 +64,7 @@ public class CustomerAgent extends Agent {
 						}
 						else{
 							// Perform the request
-							myAgent.addBehaviour(new RequestPerformer(targetProducts));
+							myAgent.addBehaviour(new RequestPerformer(targetProduct));
 
 						}
 					}
@@ -125,7 +125,7 @@ public class CustomerAgent extends Agent {
 			try {
 				DFAgentDescription [] result = DFService.search(myAgent, template);
 				System.out.println("Found the following Bakerys:");
-				BakeryAgent = new AID [result.length];
+				AID[] BakeryAgent = new AID [result.length];
 				for (int i = 0; i < result.length; ++i) {
 					BakeryAgent[i] = result[i].getName();
 					System.out.println(BakeryAgent[i].getName());
@@ -150,7 +150,7 @@ public class CustomerAgent extends Agent {
 			ProductList.add("Nut Bread");
 		}
 
-		protected void initializeTargetBooks(){
+		protected void initializeTargetProducts(){
 			targetProducts = new Vector<>();
 			Random rand = new Random();
 			// Get a random index of the catalogueBooks until the target books has nTargetBooks
@@ -176,6 +176,7 @@ public class CustomerAgent extends Agent {
 			}
 
 			public void action() {
+				MessageTemplate message_temp = null;
 				switch (step) {
 				case 0:
 					// Send the cfp to all sellers
@@ -201,7 +202,7 @@ public class CustomerAgent extends Agent {
 							// This is an offer
 							int price = Integer.parseInt(reply.getContent());
 							int location_bakery = Integer.parseInt(reply.getContent());
-							if (BakeryNear== null || (price < bestPrice  ) {
+							if (BakeryNear== null || price < bestPrice  ) {
 								// This is the best offer at present
 								bestPrice = price;
 								location= location_bakery;
@@ -281,6 +282,7 @@ public class CustomerAgent extends Agent {
 				catch (Exception e) {
 				    //LOGGER.error(e);
 				}
+			}
 
 	}
                
