@@ -47,12 +47,31 @@ public class CustomerAgent extends Agent {
 			System.out.println(getAID().getLocalName() + ": Terminating.");
 	}
 		
-		
+	    // Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
+		private class shutdown extends OneShotBehaviour{
+			public void action() {
+				ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
+				Codec codec = new SLCodec();
+				myAgent.getContentManager().registerLanguage(codec);
+				myAgent.getContentManager().registerOntology(JADEManagementOntology.getInstance());
+				shutdownMessage.addReceiver(myAgent.getAMS());
+				shutdownMessage.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
+				shutdownMessage.setOntology(JADEManagementOntology.getInstance().getName());
+				try {
+				    myAgent.getContentManager().fillContent(shutdownMessage,new Action(myAgent.getAID(), new ShutdownPlatform()));
+				    myAgent.send(shutdownMessage);
+				}
+				catch (Exception e) {
+				    //LOGGER.error(e);
+				}
+			}
+
+	}
 		private class RequestPerformer extends Behaviour {
 			private AID [] OrderProcessingAgents;
 			private AID bakeryOrders;
 			private MessageTemplate mt;
-			private step=0;
+			private int step=0;
 			
 			public void registerCustomer(){
 				// Register the book-buying service in the yellow pages
@@ -80,7 +99,7 @@ public class CustomerAgent extends Agent {
 					for (int i = 0; i < OrderProcessingAgents.length; ++i) {
 						cfp.addReceiver(OrderProcessingAgents[i]);
 					}
-					String[] order= "001;bread:20;Bonn"
+					String[] order= "001;bread:20;Bonn";
 					cfp.setContent(order);
 					cfp.setConversationId("customer-order");
 					cfp.setReplyWith("cfp"+System.currentTimeMillis()); // Unique value
@@ -108,34 +127,18 @@ public class CustomerAgent extends Agent {
 						block();
 					}
 					step = 2;
+				}
 					
 		  public boolean done() {
 						if (step == 2) {
 							addBehaviour(new shutdown());
 			}
 		
-	    // Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
-		private class shutdown extends OneShotBehaviour{
-			public void action() {
-				ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
-				Codec codec = new SLCodec();
-				myAgent.getContentManager().registerLanguage(codec);
-				myAgent.getContentManager().registerOntology(JADEManagementOntology.getInstance());
-				shutdownMessage.addReceiver(myAgent.getAMS());
-				shutdownMessage.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
-				shutdownMessage.setOntology(JADEManagementOntology.getInstance().getName());
-				try {
-				    myAgent.getContentManager().fillContent(shutdownMessage,new Action(myAgent.getAID(), new ShutdownPlatform()));
-				    myAgent.send(shutdownMessage);
-				}
-				catch (Exception e) {
-				    //LOGGER.error(e);
-				}
-			}
 
-	}
                
 }
+				}
+			}
 		
 		
 		

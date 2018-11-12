@@ -59,10 +59,6 @@ public class OrderProcessingAgent extends Agent {
 			System.out.println(getAID().getLocalName() + ": Terminating.");
 		}
 	
-	private void checkAgentAvailability() {
-		// TODO Auto-generated method stub
-		
-	}
 
 	
 	private class OrderProcessingServer extends CyclicyclicBehaviour {
