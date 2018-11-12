@@ -1,13 +1,14 @@
 package org.jsw;
 
+
 import java.util.List;
 import java.util.Vector;
-import org.jsw.agents.DummyAgent;
 
 public class Start {
     public static void main(String[] args) {
     	List<String> agents = new Vector<>();
-    	agents.add("test:org.jsw.agents.DummyAgent");
+    	agents.add("customer1:org.jsw.agents.CustomerAgent");
+    	agents.add("orderprocessor1:org.jsw.agents.OrderProcessorAgent");
 
     	List<String> cmd = new Vector<>();
     	cmd.add("-agents");

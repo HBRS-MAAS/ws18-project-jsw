@@ -27,34 +27,64 @@ public class OrderProcessingAgent extends Agent {
 	protected void setup() {
 		// Welcome message
 		System.out.println(getAID().getLocalName() + " is ready.");
-
-		receiveOrder();
-
-		System.out.println(getAID().getName() + " will process orders  " + OrderList);
-
-		checkAgentAvailability();
+		//System.out.println(getAID().getName() + " will process orders  " + OrderList);
+		registerBakery();
+		addBehaviour(new OrderProcessingServer());
+		//checkAgentAvailability();
 
 	}
-
+	
+	public void registerBakery(){
+		//Register the customer in particular area
+		DFAgentDescription dfd = new DFAgentDescription();
+		dfd.setName(getAID());
+		ServiceDescription sd = new ServiceDescription();
+		sd.setType("Bakery Orderprocessing Agent");
+		sd.setName("Bakery");
+		dfd.addServices(sd);
+		try {
+			DFService.register(this, dfd);
+		}
+		catch (FIPAException fe) {
+			fe.printStackTrace();
+		}
+	protected void takeDown() {
+	        // Deregister 
+			try {
+				DFService.deregister(this);
+			}
+			catch (FIPAException fe) {
+				fe.printStackTrace();
+			}
+			System.out.println(getAID().getLocalName() + ": Terminating.");
+		}
+	
 	private void checkAgentAvailability() {
 		// TODO Auto-generated method stub
 		
 	}
 
-	private void receiveOrder() {
-		// TODO Auto-generated method stub
-		
+	
+	private class OrderProcessingServer extends CyclicyclicBehaviour {
+		public void action() {
+			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
+            ACLMessage msg = myAgent.receive(mt);
+            
+            if (msg!=null) {
+            	System.out.println(" Order to " + myAgent.getLocalName() + " is : " + msg.getContent());
+            	ACLMessage reply = msg.createReply();
+            	reply.setPerformative(ACLMessage.INFORM);
+ 
+            	reply.setContent("Order Recived");
+            	myAgent.send(reply);
+            }
+            
+            else {
+				block();
+}
+		}
 	}
 
-	protected void takeDown() {
-		// Deregister from the yellow pages
-		try {
-			DFService.deregister(this);
-		} catch (FIPAException fe) {
-			fe.printStackTrace();
-		}
-		System.out.println(getAID().getLocalName() + ": Terminating.");
-	}
 
 	// http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
 	private class shutdown extends OneShotBehaviour {
