@@ -16,17 +16,13 @@ import org.json.JSONObject;
 public class GenerateOrder{
 	private List<JSONObject> orders;
 	
-	private List<String> product_types = new ArrayList<>(Arrays.asList("baguette", 
-			"eclair", "muffin", "doughnut", "cheesecake", "croissant", "apple pie", 
-			"swiss roll", "brownies", "strudel", "cup bake", "biscuit"));
-	
 	/*
 	Orders are randomly generated. They are saved in JSON format and includes ID and ordered
 	product list. 
 	16 Nov 2018: only one order in orders. Customer ID is randomly generated to make sure 
 	there are no duplication. Number of product ordered is also randomly generated. 
 	*/ 
-	public List<JSONObject> getOrder() {
+	public List<JSONObject> getOrder(List<String> product_types) {
 		//Object[] args = getArguments(); //For now no arguments taken
 		orders = new ArrayList<>();
 		JSONObject order = new JSONObject();
