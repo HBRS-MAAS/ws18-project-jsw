@@ -29,6 +29,7 @@ import org.json.JSONObject;
 import org.jsw.helpers.GenerateOrder;
 import org.jsw.helpers.ManageMessage;
 
+@SuppressWarnings("serial")
 public class CustomerAgent extends Agent {
 	private List<JSONObject> orders;
 	private GenerateOrder generateOrder;
