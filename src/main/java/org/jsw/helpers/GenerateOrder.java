@@ -9,8 +9,9 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class GenerateOrder{
 	private List<JSONObject> orders;
@@ -35,18 +36,23 @@ public class GenerateOrder{
 		int max = 50;
 		int total_order = 0;
 		
-		order.put("id", customer_id);
-		//JSONArray products = new JSONArray();
-		JSONObject product = new JSONObject();
+		try {
+			order.put("id", customer_id);
+			//JSONArray products = new JSONArray();
+			JSONObject product = new JSONObject();
+			
+			for(String product_type : product_types ) {
+				total_order = ThreadLocalRandom.current().nextInt(min, max + 1);
+				product.put(product_type, total_order);
+				//products.add(product);
+			}
+			
+			order.put("Product List", product);
+			orders.add(order);	
+		} catch (JSONException e) {
+	    	  e.printStackTrace();
+	     }
 		
-		for(String product_type : product_types ) {
-			total_order = ThreadLocalRandom.current().nextInt(min, max + 1);
-			product.put(product_type, total_order);
-			//products.add(product);
-		}
-		
-		order.put("Product List", product);
-		orders.add(order);
 		return orders;
 	}
 	
