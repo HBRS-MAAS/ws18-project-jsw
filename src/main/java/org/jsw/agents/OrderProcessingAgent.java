@@ -15,10 +15,21 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 import java.util.Random;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.jsw.helpers.GenerateOrder;
+import org.jsw.helpers.ManageMessage;
+
+@SuppressWarnings("serial")
 public class OrderProcessingAgent extends Agent {
 	private List<String> OrderList;
 	// The list of Bakery agents
@@ -48,6 +59,8 @@ public class OrderProcessingAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+	}
+	
 	protected void takeDown() {
 	        // Deregister 
 			try {
@@ -65,7 +78,7 @@ public class OrderProcessingAgent extends Agent {
 	}
 
 	
-	private class OrderProcessingServer extends CyclicyclicBehaviour {
+	private class OrderProcessingServer extends CyclicBehaviour {
 		public void action() {
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
             ACLMessage msg = myAgent.receive(mt);

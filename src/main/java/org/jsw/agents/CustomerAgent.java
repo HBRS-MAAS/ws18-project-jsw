@@ -30,7 +30,7 @@ import org.jsw.helpers.GenerateOrder;
 import org.jsw.helpers.ManageMessage;
 
 @SuppressWarnings("serial")
-public class CustomerAgent extends Agent {
+public class CustomerAgent extends Agent {	
 	private List<JSONObject> orders;
 	private GenerateOrder generateOrder;
 	private JSONObject incomingProposal = new JSONObject();
@@ -74,6 +74,8 @@ public class CustomerAgent extends Agent {
 		private int step=0;
 		
 		public void registerCustomer(){
+			System.out.println("Register Customer");
+			
 			// Register the Customer service in the yellow pages
 			DFAgentDescription dfd = new DFAgentDescription();
 			dfd.setName(getAID());
@@ -91,9 +93,12 @@ public class CustomerAgent extends Agent {
 
 				
 		public void action() {
+			System.out.println("Action Start");
 			switch (step) {
 			case 0:
 				registerCustomer();
+				
+				System.out.println("Send Order");
 				
 				// Send the order (message) to all sellers
 				ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -118,6 +123,8 @@ public class CustomerAgent extends Agent {
 				break;
 				
 			case 1:
+				System.out.println("Get Proposal");
+				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
 				ACLMessage proposal = receive(MessageTemplate.MatchProtocol("customer-order"));
 				if (proposal != null) {
@@ -133,6 +140,8 @@ public class CustomerAgent extends Agent {
 								e.printStackTrace();
 							}
 						}
+						
+						System.out.println("Send Confirmation");
 						
 						//Send the confirmation
 						ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
