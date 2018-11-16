@@ -104,52 +104,52 @@ public class CustomerAgent extends Agent {
 				
 			case 1:
 				// Receive the purchase order reply
-				reply = myAgent.receive(mt);
+				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
 					// Purchase order reply received
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						bakeryOrders = reply.getSender();
 						System.out.println(reply.getContent());
-					}
-					else {
+					} else {
 						System.out.println("No reply recived");
-						}
-					}
-					else {
 						block();
 					}
 					step = 2;
 				}
-}
+			default:
+				break;
+			}
+		}
 					
-		  public boolean done() {
+		public boolean done() {
 			if (step == 2) {
 				addBehaviour(new shutdown());
 			}
 			return (step == 2);
-}
-}
+		}
 		
-// Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
-private class shutdown extends OneShotBehaviour{
-	public void action() {
-		ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
-		Codec codec = new SLCodec();
-		myAgent.getContentManager().registerLanguage(codec);
-		myAgent.getContentManager().registerOntology(JADEManagementOntology.getInstance());
-				shutdownMessage.addReceiver(myAgent.getAMS());
-				shutdownMessage.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
-				shutdownMessage.setOntology(JADEManagementOntology.getInstance().getName());
+		// Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
+		private class shutdown extends OneShotBehaviour{
+			public void action() {
+				ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
+				Codec codec = new SLCodec();
+				myAgent.getContentManager().registerLanguage(codec);
+				myAgent.getContentManager().registerOntology(JADEManagementOntology.getInstance());
+						shutdownMessage.addReceiver(myAgent.getAMS());
+						shutdownMessage.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
+						shutdownMessage.setOntology(JADEManagementOntology.getInstance().getName());
 				try {
-				    myAgent.getContentManager().fillContent(shutdownMessage,new Action(myAgent.getAID(), new ShutdownPlatform()));
-				    myAgent.send(shutdownMessage);
+					myAgent.getContentManager().fillContent(shutdownMessage,new Action(myAgent.getAID(), new ShutdownPlatform()));
+					myAgent.send(shutdownMessage);
+				} catch (Exception e) {
+					//LOGGER.error(e);
 				}
-				catch (Exception e) {
-				    //LOGGER.error(e);
 			}
 		}
-
+	}
 }
+		
+
            
 
 	
