@@ -82,7 +82,7 @@ public class CustomerAgent extends Agent {
 			dfd.addServices(sd);
 			
 			try {
-				DFService.register(this, dfd);
+				DFService.register(CustomerAgent.this, dfd);
 			} catch (FIPAException fe) {
 				fe.printStackTrace();
 			}
