@@ -16,17 +16,31 @@ import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 import java.util.Random;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.jsw.helpers.GenerateOrder;
+import org.jsw.helpers.ManageMessage;
 
 public class CustomerAgent extends Agent {
 	private List<JSONObject> orders;
 	private GenerateOrder generateOrder;
+	private JSONObject incomingProposal = new JSONObject();
+	private JSONObject confirmation = new JSONObject();
+	
+	private List<String> productTypes = new ArrayList<>(Arrays.asList("baguette", 
+			"eclair", "muffin", "doughnut", "cheesecake", "croissant", "apple pie", 
+			"swiss roll", "brownies", "strudel", "cup bake", "biscuit"));
+	
+	private List<String> bakeryName = new ArrayList<>(Arrays.asList("J-Co", 
+			"BreadTalk", "Tous Le Jours", "Paris Baguette", "Chiz"));
 	
 	protected void setup() {
 		generateOrder = new GenerateOrder();
@@ -86,13 +100,13 @@ public class CustomerAgent extends Agent {
 					msg.addReceiver(OrderProcessingAgents[i]);
 				}
 				
-				orders = generateOrder.getOrder();
+				CustomerAgent.this.orders = generateOrder.getOrder(CustomerAgent.this.productTypes);
 				for(JSONObject order : orders) {
 					msg.setConversationId("customer-order");
 					msg.setLanguage("JSON");
 					msg.setContent(order.toString());
 					msg.addReplyTo(getAID());
-					msg.setReplyWith("msg"+System.currentTimeMillis()); // Unique value
+					msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
 					send(msg);
 				}
 				
@@ -103,16 +117,36 @@ public class CustomerAgent extends Agent {
 				break;
 				
 			case 1:
-				// Receive the purchase order reply
-				ACLMessage reply = myAgent.receive(mt);
-				if (reply != null) {
+				// Receive the purchase order reply: Bakery name that sells the order and the price
+				ACLMessage proposal = receive(MessageTemplate.MatchProtocol("customer-order"));
+				if (proposal != null) {
 					// Purchase order reply received
-					if (reply.getPerformative() == ACLMessage.INFORM) {
-						bakeryOrders = reply.getSender();
-						System.out.println(reply.getContent());
+					if (proposal.getPerformative() == ACLMessage.PROPOSE) {
+						if (proposal.getLanguage().equals("JSON")) {
+							try {
+								CustomerAgent.this.incomingProposal = new JSONObject(proposal.getContent());
+								CustomerAgent.this.confirmation = ManageMessage.getConfirmation(incomingProposal,
+										CustomerAgent.this.bakeryName, CustomerAgent.this.productTypes);
+							} catch (JSONException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						
+						//Send the confirmation
+						ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
+						confirm.setConversationId("customer-order");
+						confirm.setLanguage("JSON");
+						confirm.setContent(CustomerAgent.this.confirmation.toString());
+						confirm.addReplyTo(getAID());
+						confirm.setReplyWith("confirm-"+System.currentTimeMillis()); // Unique value
+						send(confirm);
+						
+						//Debug
+						System.out.println(CustomerAgent.this.confirmation);
 					} else {
-						System.out.println("No reply recived");
-						block();
+						System.out.println("No reply received");
+						block(); //Wait until receive any reply
 					}
 					step = 2;
 				}
@@ -120,7 +154,8 @@ public class CustomerAgent extends Agent {
 				break;
 			}
 		}
-					
+		
+		//Stop the action loop
 		public boolean done() {
 			if (step == 2) {
 				addBehaviour(new shutdown());
