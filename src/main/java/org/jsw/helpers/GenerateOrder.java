@@ -1,17 +1,5 @@
 package org.jsw.helpers;
 
-import jade.core.AID;
-import jade.core.Agent;
-import jade.core.behaviours.CyclicBehaviour;
-import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.TickerBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +19,12 @@ public class GenerateOrder{
 			"eclair", "muffin", "doughnut", "cheesecake", "croissant", "apple pie", 
 			"swiss roll", "brownies", "strudel", "cup bake", "biscuit"));
 	
+	/*
+	Orders are randomly generated. They are saved in JSON format and includes ID and ordered
+	product list. 
+	16 Nov 2018: only one order in orders. Customer ID is randomly generated to make sure 
+	there are no duplication. Number of product ordered is also randomly generated. 
+	*/ 
 	public List<JSONObject> getOrder() {
 		//Object[] args = getArguments(); //For now no arguments taken
 		orders = new ArrayList<>();
@@ -42,16 +36,16 @@ public class GenerateOrder{
 		int total_order = 0;
 		
 		order.put("id", customer_id);
-		JSONArray products = new JSONArray();
+		//JSONArray products = new JSONArray();
 		JSONObject product = new JSONObject();
 		
 		for(String product_type : product_types ) {
 			total_order = ThreadLocalRandom.current().nextInt(min, max + 1);
 			product.put(product_type, total_order);
-			products.add(product);
+			//products.add(product);
 		}
 		
-		order.put("Product List", products);
+		order.put("Product List", product);
 		orders.add(order);
 		return orders;
 	}
