@@ -65,10 +65,10 @@ public class CustomerAgent extends Agent {
 		}
 		
 		System.out.println(getAID().getLocalName() + ": Terminating.");
-	}	
+	}
 		
 	private class RequestPerformer extends Behaviour {
-		private AID [] OrderProcessingAgents;
+		private AID [] sellerAgents;
 		private AID bakeryOrders;
 		private MessageTemplate mt;
 		private int step=0;
@@ -90,24 +90,47 @@ public class CustomerAgent extends Agent {
 				fe.printStackTrace();
 			}
 		}
-
+		
+		protected void getOrderProcessorAID() {
+	        DFAgentDescription template = new DFAgentDescription();
+	        ServiceDescription sd = new ServiceDescription();
+	        sd.setType("Order-processing-agent");
+	        template.addServices(sd);
+	        try {
+	            DFAgentDescription[] result = DFService.search(CustomerAgent.this, template);
+	            sellerAgents = new AID[result.length];
+	            for (int i = 0; i < result.length; ++i) {
+	                sellerAgents[i] = result[i].getName();
+	            }
+	        }
+	        catch (FIPAException fe) {
+	            fe.printStackTrace();
+	        }
+	    }
 				
 		public void action() {
 			System.out.println("Action Start");
 			switch (step) {
 			case 0:
 				registerCustomer();
+				getOrderProcessorAID();
 				
 				System.out.println("Send Order");
 				
 				// Send the order (message) to all sellers
 				ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-				for (int i = 0; i < OrderProcessingAgents.length; ++i) {
-					msg.addReceiver(OrderProcessingAgents[i]);
+				
+				System.out.println("1");
+				
+				for (int i = 0; i < sellerAgents.length; ++i) {
+					msg.addReceiver(sellerAgents[i]);
 				}
+				
+				System.out.println("Prepare Order");
 				
 				CustomerAgent.this.orders = generateOrder.getOrder(CustomerAgent.this.productTypes);
 				for(JSONObject order : orders) {
+					System.out.println("order: " + order);
 					msg.setConversationId("customer-order");
 					msg.setLanguage("JSON");
 					msg.setContent(order.toString());
