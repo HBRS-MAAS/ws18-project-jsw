@@ -69,7 +69,6 @@ public class CustomerAgent extends Agent {
 		
 	private class RequestPerformer extends Behaviour {
 		private AID [] sellerAgents;
-		private AID bakeryOrders;
 		private MessageTemplate mt;
 		private int step=0;
 		
@@ -81,6 +80,7 @@ public class CustomerAgent extends Agent {
 			dfd.setName(getAID());
 			ServiceDescription sd = new ServiceDescription();
 			sd.setType("Bakery-Customer");
+			//sd.setName("Bakery");
 			sd.setName("Bakery");
 			dfd.addServices(sd);
 			
@@ -91,10 +91,10 @@ public class CustomerAgent extends Agent {
 			}
 		}
 		
-		protected void getOrderProcessorAID() {
+		protected void getSellers() {
 	        DFAgentDescription template = new DFAgentDescription();
 	        ServiceDescription sd = new ServiceDescription();
-	        sd.setType("Order-processing-agent");
+	        sd.setType("Bakery-Seller");
 	        template.addServices(sd);
 	        try {
 	            DFAgentDescription[] result = DFService.search(CustomerAgent.this, template);
@@ -109,19 +109,17 @@ public class CustomerAgent extends Agent {
 	    }
 				
 		public void action() {
-			System.out.println("Action Start");
+			//System.out.println("Action Start");
 			switch (step) {
 			case 0:
 				registerCustomer();
-				getOrderProcessorAID();
+				getSellers();
 				
 				System.out.println("Send Order");
 				
 				// Send the order (message) to all sellers
 				ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-				
-				System.out.println("1");
-				
+								
 				for (int i = 0; i < sellerAgents.length; ++i) {
 					msg.addReceiver(sellerAgents[i]);
 				}
@@ -136,7 +134,7 @@ public class CustomerAgent extends Agent {
 					msg.setContent(order.toString());
 					msg.addReplyTo(getAID());
 					msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
-					send(msg);
+					myAgent.send(msg);
 				}
 				
 				// Prepare the template to get proposals
@@ -146,15 +144,16 @@ public class CustomerAgent extends Agent {
 				break;
 				
 			case 1:
-				System.out.println("Get Proposal");
+				//System.out.println("Get Proposal");
 				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
-				ACLMessage proposal = receive(MessageTemplate.MatchProtocol("customer-order"));
+				ACLMessage proposal = myAgent.receive(mt);
 				if (proposal != null) {
 					// Purchase order reply received
 					if (proposal.getPerformative() == ACLMessage.PROPOSE) {
 						if (proposal.getLanguage().equals("JSON")) {
 							try {
+								System.out.println("Received Proposal: " + proposal.getContent());
 								CustomerAgent.this.incomingProposal = new JSONObject(proposal.getContent());
 								CustomerAgent.this.confirmation = ManageMessage.getConfirmation(incomingProposal,
 										CustomerAgent.this.bakeryName, CustomerAgent.this.productTypes);
