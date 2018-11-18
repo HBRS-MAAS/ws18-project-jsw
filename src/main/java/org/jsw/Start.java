@@ -8,7 +8,7 @@ public class Start {
     public static void main(String[] args) {
     	List<String> agents = new Vector<>();
     	agents.add("customer1:org.jsw.agents.CustomerAgent");
-    	agents.add("orderprocessor1:org.jsw.agents.OrderProcessorAgent");
+    	agents.add("orderprocessor1:org.jsw.agents.OrderProcessingAgent");
 
     	List<String> cmd = new Vector<>();
     	cmd.add("-agents");
