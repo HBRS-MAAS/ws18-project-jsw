@@ -17,8 +17,12 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.Random;
@@ -31,12 +35,45 @@ import org.jsw.helpers.ManageMessage;
 
 @SuppressWarnings("serial")
 public class OrderProcessingAgent extends Agent {
+	private List<String> productTypes;	
+	private String bakeryName;
+	
     protected void setup() {
-        System.out.println("\tOrder-processing-agent "+getAID().getLocalName()+" is born.");
+    	bakeryName = getAID().getLocalName();
+    	
+        System.out.println("\tOrder-processing-agent " + bakeryName +" is born.");
 
         registerSeller();
+        getProductTypes();
         
         addBehaviour(new OfferRequestsServer());
+    }
+    
+	protected void getProductTypes() {
+    	String filepath = "/home/widya/Gradle/ws18-project-jsw/src/main/resources/config/list/" + bakeryName + ".json";
+    	String fileString = "";
+    	JSONObject bakeryProduct = new JSONObject();
+    	JSONObject product = new JSONObject();
+    	productTypes = new ArrayList();
+    	
+		try {
+			fileString = new String(Files.readAllBytes(Paths.get(filepath)), StandardCharsets.UTF_8);
+			bakeryProduct = new JSONObject(fileString);
+			
+			if (bakeryProduct.has("Product Price")) {
+				product = bakeryProduct.getJSONObject("Product Price");
+	        }
+			
+			Iterator iter = product.keys();
+			while(iter.hasNext()){
+				String key = (String)iter.next();
+				productTypes.add(key);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
     }
 
     protected void takeDown() {
@@ -66,21 +103,38 @@ public class OrderProcessingAgent extends Agent {
 
     private class OfferRequestsServer extends CyclicBehaviour {
         public void action() {
-            MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-            ACLMessage msg = myAgent.receive(mt);
-            if (msg != null) {
-                // Message received. Process it
-                try {
-                    System.out.println("Received order: " + msg.getContent());
-                } catch(Exception e){
-                    System.out.println("Could not read order");
-                }
-                ACLMessage reply = msg.createReply();
+        	JSONObject incomingRequest = new JSONObject();
+        	JSONObject proposal = new JSONObject();
+            
+        	//Receive order request from a customer
+        	MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+            ACLMessage request = myAgent.receive(mt);
+            
+            //Process the request if it is not empty and it is in JSON language
+            if (request != null) {
+            	if (request.getLanguage().equals("JSON")) {
+					try {
+						//System.out.println("Received Request: " + request.getContent());
+						incomingRequest = new JSONObject(request.getContent());
+						proposal = ManageMessage.calculatePrice(incomingRequest, bakeryName, productTypes);
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+            	
+            	//Reply the request with a proposal
+                ACLMessage reply = request.createReply();
                 reply.setPerformative(ACLMessage.PROPOSE);
-                reply.setContent("Got your order.");
-                myAgent.send(reply);
-            }
-            else {
+                //reply.setContent("Got your order.");
+                //myAgent.send(reply);
+                
+                //Send the proposal
+				reply.setLanguage("JSON");
+				reply.setContent(proposal.toString());
+				myAgent.send(reply);
+            } else {
+                //System.out.println("Could not read order");
                 block();
             }
         }
