@@ -32,7 +32,7 @@ import org.jsw.helpers.ManageMessage;
 import org.jsw.helpers.NameCollection;
 
 @SuppressWarnings("serial")
-public class CustomerAgent extends Agent {	
+public class CustomerAgent extends BaseAgent {	
 	private List<JSONObject> orders;
 	private GenerateOrder generateOrder = new GenerateOrder();
 	private NameCollection nameCollection = new NameCollection();
@@ -42,7 +42,8 @@ public class CustomerAgent extends Agent {
 	private List<String> bakeryName = nameCollection.getBakeryName();;
 	private JSONObject combined = new JSONObject();
 	
-	protected void setup() {				
+	protected void setup() {		
+		super.setup();
 		System.out.println(getAID().getLocalName() + " is ready.");
 		
 		addBehaviour(new RequestPerformer());
@@ -54,13 +55,7 @@ public class CustomerAgent extends Agent {
 	}
 	
 	protected void takeDown() {
-        // Deregister from the yellow pages
-		try {
-			DFService.deregister(this);
-		} catch (FIPAException fe) {
-			fe.printStackTrace();
-		}
-		
+		deRegister();
 		System.out.println(getAID().getLocalName() + ": Terminating.");
 	}
 		
@@ -68,24 +63,6 @@ public class CustomerAgent extends Agent {
 		private AID [] sellerAgents;
 		private MessageTemplate mt;
 		private int step=0;
-		
-		public void registerCustomer(){
-			System.out.println("Register Customer");
-			
-			// Register the Customer service in the yellow pages
-			DFAgentDescription dfd = new DFAgentDescription();
-			dfd.setName(getAID());
-			ServiceDescription sd = new ServiceDescription();
-			sd.setType("Bakery-Customer");
-			sd.setName("Bakery");
-			dfd.addServices(sd);
-			
-			try {
-				DFService.register(CustomerAgent.this, dfd);
-			} catch (FIPAException fe) {
-				fe.printStackTrace();
-			}
-		}
 		
 		protected void getSellers() {
 	        DFAgentDescription template = new DFAgentDescription();
@@ -108,7 +85,8 @@ public class CustomerAgent extends Agent {
 			//System.out.println("Action Start");
 			switch (step) {
 			case 0:
-				registerCustomer();
+				register("Bakery-Customer", "Bakery");
+				//registerCustomer();
 				getSellers();
 				
 				//System.out.println("Send Order");
