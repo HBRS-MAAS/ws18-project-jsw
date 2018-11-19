@@ -1,7 +1,8 @@
-##CUSTOMER MESSAGES
-#INPUT
-The customer will receive input from the order processing agents of different bakeries mentioning the products and there price and the message will be of form
+#CUSTOMER MESSAGES
+##INPUT
+The customer will receive input from the order processing agents of different bakeries mentioning the products and there price and the message will be of form:
 
+```json
 {
   "Product list":
   {
@@ -13,8 +14,10 @@ The customer will receive input from the order processing agents of different ba
     }
 }
 
-Example
+```
+###Example
 
+```json
 {
   "Product list":
 {
@@ -32,11 +35,14 @@ Example
                    }
          }
 }
+```
 
+<br>
 
-#OUTPUT
+##OUTPUT
 The customer sends orders to the bakery and the message is given by
 
+```json
  {
     "Customerid": "String-customerid",
     "name": "String-customer-name",
@@ -60,8 +66,10 @@ The customer sends orders to the bakery and the message is given by
       }
     ]
   }
+```
+###Example
 
-Example
+```json
  {
     "Customerid": "AR-00333",
     "name": "Kings shop",
@@ -89,6 +97,9 @@ Example
       }
     ]
   }
+
+```
+<br>
 
 
 
