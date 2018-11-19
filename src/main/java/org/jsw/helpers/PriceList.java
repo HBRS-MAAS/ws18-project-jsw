@@ -16,7 +16,7 @@ public class PriceList {
 		int max = 10;
 		
 		try {
-			order.put("bakery name", name);
+			order.put("Bakery Name", name);
 			
 			JSONObject product = new JSONObject();
 			

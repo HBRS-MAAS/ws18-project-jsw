@@ -28,7 +28,7 @@ public class GenerateOrder{
 		JSONObject order = new JSONObject();
 				
 		String customer_id = generateRandomID(10);
-		int min = 1;
+		int min = 0;
 		int max = 50;
 		int total_order = 0;
 		
@@ -47,7 +47,7 @@ public class GenerateOrder{
 			orders.add(order);	
 		} catch (JSONException e) {
 	    	  e.printStackTrace();
-	     }
+	    }
 		
 		return orders;
 	}
