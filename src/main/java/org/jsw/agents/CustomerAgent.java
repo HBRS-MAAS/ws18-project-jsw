@@ -19,6 +19,7 @@ import jade.domain.FIPAAgentManagement.ServiceDescription;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.Random;
@@ -142,9 +143,7 @@ public class CustomerAgent extends Agent {
 				//System.out.println("Get Proposal");
 				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
-				ACLMessage proposal = myAgent.receive(mt);
-				
-				
+				ACLMessage proposal = myAgent.receive(mt);				
 				
 				if (proposal != null) {
 					// Purchase order reply received
@@ -185,16 +184,19 @@ public class CustomerAgent extends Agent {
 					//System.out.println("Send Confirmation");
 					
 					//Send the confirmation
-					ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
-					confirm.setConversationId("customer-order");
-					confirm.setLanguage("JSON");
-					confirm.setContent(CustomerAgent.this.confirmation.toString());
-					confirm.addReplyTo(getAID());
-					confirm.setReplyWith("confirm-"+System.currentTimeMillis()); // Unique value
-					send(confirm);
-					
-					//Debug
-					System.out.println("Confirmation" + CustomerAgent.this.confirmation);
+					for (int i = 0; i < sellerAgents.length; ++i) {
+						String name = sellerAgents[i].getLocalName();
+						if (CustomerAgent.this.confirmation.has(name)) {
+							ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
+							confirm.setConversationId("customer-order");
+							confirm.addReceiver(sellerAgents[i]);
+							confirm.setLanguage("JSON");
+							confirm.setContent(CustomerAgent.this.confirmation.getString(name));
+							send(confirm);
+							
+							System.out.println("confirm " + name + ": " + confirm.getContent());
+						}
+		            }
 				} catch (JSONException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

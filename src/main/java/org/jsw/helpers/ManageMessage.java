@@ -50,7 +50,12 @@ public class ManageMessage {
 					min_price = bakery.getInt(type);
 				}
 			}
-			confirmation.put(type, chosenBakery);
+			
+			if (confirmation.has(chosenBakery)) {
+				type = type + ", " + confirmation.getString(chosenBakery);
+			}
+			
+			confirmation.put(chosenBakery, type);
 		}
 		
 		return confirmation;
