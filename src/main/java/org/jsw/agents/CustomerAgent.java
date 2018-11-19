@@ -28,31 +28,27 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsw.helpers.GenerateOrder;
 import org.jsw.helpers.ManageMessage;
+import org.jsw.helpers.NameCollection;
 
 @SuppressWarnings("serial")
 public class CustomerAgent extends Agent {	
 	private List<JSONObject> orders;
-	private GenerateOrder generateOrder;
+	private GenerateOrder generateOrder = new GenerateOrder();
+	private NameCollection nameCollection = new NameCollection();
 	private JSONObject incomingProposal = new JSONObject();
 	private JSONObject confirmation = new JSONObject();
+	private List<String> productTypes = nameCollection.getProductType();;	
+	private List<String> bakeryName = nameCollection.getBakeryName();;
+	private JSONObject combined = new JSONObject();
 	
-	private List<String> productTypes = new ArrayList<>(Arrays.asList("baguette", 
-			"eclair", "muffin", "doughnut", "cheesecake", "croissant", "apple pie", 
-			"swiss roll", "brownies", "strudel", "cup bake", "biscuit"));
-	
-	private List<String> bakeryName = new ArrayList<>(Arrays.asList("J-Co", 
-			"BreadTalk", "Tous Le Jours", "Paris Baguette", "Chiz"));
-	
-	protected void setup() {
-		generateOrder = new GenerateOrder();
-		
+	protected void setup() {				
 		System.out.println(getAID().getLocalName() + " is ready.");
 		
 		addBehaviour(new RequestPerformer());
 	    try {
 	    	Thread.sleep(3000);
 	    } catch (InterruptedException e) {
-	    	//e.printStackTrace();
+	    	e.printStackTrace();
 	    }			
 	}
 	
@@ -80,7 +76,6 @@ public class CustomerAgent extends Agent {
 			dfd.setName(getAID());
 			ServiceDescription sd = new ServiceDescription();
 			sd.setType("Bakery-Customer");
-			//sd.setName("Bakery");
 			sd.setName("Bakery");
 			dfd.addServices(sd);
 			
@@ -115,7 +110,7 @@ public class CustomerAgent extends Agent {
 				registerCustomer();
 				getSellers();
 				
-				System.out.println("Send Order");
+				//System.out.println("Send Order");
 				
 				// Send the order (message) to all sellers
 				ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -124,11 +119,11 @@ public class CustomerAgent extends Agent {
 					msg.addReceiver(sellerAgents[i]);
 				}
 				
-				System.out.println("Prepare Order");
+				//System.out.println("Prepare Order");
 				
 				CustomerAgent.this.orders = generateOrder.getOrder(CustomerAgent.this.productTypes);
 				for(JSONObject order : orders) {
-					System.out.println("order: " + order);
+					//System.out.println("order: " + order);
 					msg.setConversationId("customer-order");
 					msg.setLanguage("JSON");
 					msg.setContent(order.toString());
@@ -148,40 +143,65 @@ public class CustomerAgent extends Agent {
 				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
 				ACLMessage proposal = myAgent.receive(mt);
+				
+				
+				
 				if (proposal != null) {
 					// Purchase order reply received
 					if (proposal.getPerformative() == ACLMessage.PROPOSE) {
 						if (proposal.getLanguage().equals("JSON")) {
 							try {
-								System.out.println("Received Proposal: " + proposal.getContent());
-								CustomerAgent.this.incomingProposal = new JSONObject(proposal.getContent());
-								CustomerAgent.this.confirmation = ManageMessage.getConfirmation(incomingProposal,
-										CustomerAgent.this.bakeryName, CustomerAgent.this.productTypes);
+								//System.out.println("Received Proposal: " + proposal.getContent());
+								JSONObject Obj1 = new JSONObject(proposal.getContent());
+								JSONObject Obj2 = new JSONObject();
+								
+								String name = proposal.getSender().getLocalName();
+								
+								Obj2 = Obj1.getJSONObject(name);
+								
+								CustomerAgent.this.incomingProposal.put(name, Obj2);
 							} catch (JSONException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
-						
-						System.out.println("Send Confirmation");
-						
-						//Send the confirmation
-						ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
-						confirm.setConversationId("customer-order");
-						confirm.setLanguage("JSON");
-						confirm.setContent(CustomerAgent.this.confirmation.toString());
-						confirm.addReplyTo(getAID());
-						confirm.setReplyWith("confirm-"+System.currentTimeMillis()); // Unique value
-						send(confirm);
-						
-						//Debug
-						System.out.println(CustomerAgent.this.confirmation);
 					} else {
 						System.out.println("No reply received");
 						block(); //Wait until receive any reply
 					}
-					step = 2;
+					
+					if (incomingProposal.length() == sellerAgents.length) {
+						System.out.println("incomingProposal" + incomingProposal);
+						step = 2;
+					}  
+					
 				}
+				break;
+			case 2:
+				try {
+					CustomerAgent.this.confirmation = ManageMessage.findTheCheapest(incomingProposal,
+							CustomerAgent.this.bakeryName, CustomerAgent.this.productTypes);
+					
+					//System.out.println("Send Confirmation");
+					
+					//Send the confirmation
+					ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
+					confirm.setConversationId("customer-order");
+					confirm.setLanguage("JSON");
+					confirm.setContent(CustomerAgent.this.confirmation.toString());
+					confirm.addReplyTo(getAID());
+					confirm.setReplyWith("confirm-"+System.currentTimeMillis()); // Unique value
+					send(confirm);
+					
+					//Debug
+					System.out.println("Confirmation" + CustomerAgent.this.confirmation);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				step = 3;
+				break;
 			default:
 				break;
 			}
@@ -189,10 +209,10 @@ public class CustomerAgent extends Agent {
 		
 		//Stop the action loop
 		public boolean done() {
-			if (step == 2) {
+			if (step == 3) {
 				addBehaviour(new shutdown());
 			}
-			return (step == 2);
+			return (step == 3);
 		}
 		
 		// Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
