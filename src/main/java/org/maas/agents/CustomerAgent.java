@@ -221,16 +221,3 @@ public class CustomerAgent extends BaseAgent {
 		}
 	}
 }
-		
-
-           
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
