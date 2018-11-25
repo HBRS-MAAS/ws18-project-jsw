@@ -30,7 +30,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.maas.utils.Data;
-import org.maas.utils.ManageMessage;
 
 @SuppressWarnings("serial")
 public class CustomerAgent extends BaseAgent {	
