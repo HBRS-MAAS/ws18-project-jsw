@@ -1,4 +1,4 @@
-package org.jsw.agents;
+package org.maas.agents;
 
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
@@ -22,101 +22,73 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.Random;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsw.helpers.GenerateOrder;
-import org.jsw.helpers.ManageMessage;
+import org.maas.utils.Data;
 
 @SuppressWarnings("serial")
-public class OrderProcessingAgent extends Agent {
-	private List<String> productTypes;	
+public class OrderProcessingAgent extends BaseAgent {
+	private List<String> productType;
+	private List<String> productPrice;
 	private String bakeryName;
+	private Data seller = new Data();
 	
     protected void setup() {
+    	super.setup();
     	bakeryName = getAID().getLocalName();
     	
-        System.out.println("\tOrder-processing-agent " + bakeryName +" is born.");
-
-        registerSeller();
-        getProductTypes();
+        System.out.println(bakeryName + " is ready.");
+    	
+    	register("Bakery-Seller", "Bakery");
+    	
+    	seller.retrieve("src/main/resources/config/small/bakeries.json");
+    	
+    	Map<String,List<String>> map = new HashMap();
+    	map = seller.getProduct(bakeryName);
+    	
+    	productType = map.get("productType");
+    	productPrice = map.get("productPrice");
+    	
+    	//System.out.println("productType: " + productType);
+    	//System.out.println("productPrice: " + productPrice);
         
         addBehaviour(new OfferRequestsServer());
     }
-    
-	protected void getProductTypes() {
-    	String filepath = "/home/widya/Gradle/ws18-project-jsw/src/main/resources/config/list/" + bakeryName + ".json";
-    	String fileString = "";
-    	JSONObject bakeryProduct = new JSONObject();
-    	JSONObject product = new JSONObject();
-    	productTypes = new ArrayList();
-    	
-		try {
-			fileString = new String(Files.readAllBytes(Paths.get(filepath)), StandardCharsets.UTF_8);
-			bakeryProduct = new JSONObject(fileString);
-			
-			if (bakeryProduct.has("Product Price")) {
-				product = bakeryProduct.getJSONObject("Product Price");
-	        }
-			
-			Iterator iter = product.keys();
-			while(iter.hasNext()){
-				String key = (String)iter.next();
-				productTypes.add(key);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-    }
-
+      
     protected void takeDown() {
-        try {
-            DFService.deregister(this);
-        }
-        catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
+        deRegister();
         System.out.println("\t"+getAID().getLocalName()+" terminating.");
     }
     
-    protected void registerSeller(){
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("Bakery-Seller");
-        sd.setName("Bakery");
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        }
-        catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
-    }
-
     private class OfferRequestsServer extends CyclicBehaviour {
-        public void action() {
-        	JSONObject incomingRequest = new JSONObject();
-        	JSONObject proposal = new JSONObject();
+    	public void action() {
+    		//Receive order request from a customer
+        	MessageTemplate mr = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
+            ACLMessage request = myAgent.receive(mr);
             
-        	//Receive order request from a customer
-        	MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-            ACLMessage request = myAgent.receive(mt);
+            MessageTemplate mc = MessageTemplate.MatchPerformative(ACLMessage.CONFIRM);
+            ACLMessage confirm = myAgent.receive(mc);
             
             //Process the request if it is not empty and it is in JSON language
             if (request != null) {
+            	JSONObject incomingRequest = new JSONObject();
+            	JSONObject proposal = new JSONObject();
+            	
             	if (request.getLanguage().equals("JSON")) {
 					try {
 						//System.out.println("Received Request: " + request.getContent());
 						incomingRequest = new JSONObject(request.getContent());
-						proposal = ManageMessage.calculatePrice(incomingRequest, bakeryName, productTypes);
+						
+						proposal = seller.checkAvailability(incomingRequest, bakeryName, productType, productPrice);
+						
 					} catch (JSONException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -127,12 +99,16 @@ public class OrderProcessingAgent extends Agent {
                 ACLMessage reply = request.createReply();
                 reply.setPerformative(ACLMessage.PROPOSE);
                 //reply.setContent("Got your order.");
-                //myAgent.send(reply);
-                
-                //Send the proposal
 				reply.setLanguage("JSON");
 				reply.setContent(proposal.toString());
-				myAgent.send(reply);
+				sendMessage(reply);
+            } else if (confirm != null) {
+            	JSONObject confirmation = new JSONObject();
+    			
+                //Process the request if it is not empty and it is in JSON language
+                if (confirm.getLanguage().equals("JSON")) {
+    					System.out.println(bakeryName + " received confirm: " + confirm.getContent());
+                }
             } else {
                 //System.out.println("Could not read order");
                 block();
