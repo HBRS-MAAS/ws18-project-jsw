@@ -1,4 +1,4 @@
-package org.jsw.agents;
+package org.maas.agents;
 
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
