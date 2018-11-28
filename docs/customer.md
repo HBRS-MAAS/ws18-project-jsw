@@ -1,105 +1,29 @@
-#CUSTOMER MESSAGES
-##INPUT
-The customer will receive input from the order processing agents of different bakeries mentioning the products and there price and the message will be of form:
+# CUSTOMER MESSAGES
+3 message exchange between CustomerAgent and OrderProcessingAgent
 
-```json
-{
-  "Product list":
-  {
-    "Bakery Name": "String-BakeryName",
-    "ProductsOffered": {
-     "Product":"Price"
-                       }
-    
-    }
-}
 
-```
-###Example
+## OUT MESSAGES
+- **performative**: REQUEST
+- **sender**: customer agent
+- **receiver**: order processing agent
+- **conversation-id**: "customer-order"
+- **content**:
+{"order_date":{"hour":4,"day":1},"delivery_date":{"hour":21,"day":2},"guid":"order-001","location":null,"customer_id":"customer-001","products":{"Donut":0,"Bagel":4,"Berliner":2,"Muffin":8,"Bread":2}}
 
-```json
-{
-  "Product list":
-{
-   {
-    "Bakery Name":"Paris Baguette"
-    "ProductOffered":
-               {"apple pie":7,
-                "swiss roll":10,
-                "brownies":8,
-                "cup bake":8,
-                "croissant":10,
-                "biscuit":10,
-                "strudel":5,
-                "muffin":5
-                   }
-         }
-}
-```
+- **performative**: CONFIRM
+- **sender**: customer agent
+- **receiver**: order processing agent
+- **conversation-id**: "customer-order"
+- **content**:
+"Bread, Muffin, Donut"
 
-<br>
 
-##OUTPUT
-The customer sends orders to the bakery and the message is given by
-
-```json
- {
-    "Customerid": "String-customerid",
-    "name": "String-customer-name",
-    "location": {
-      "y": "Integer-loc_y",
-      "x": "Integer-loc_x"
-    },
-    "orders": [
-      {
-        "orderDate": {
-          "day": "Integer-day",
-          "hour": "Integer-hour"
-        },
-        "deliveryDate": {
-          "day": "Integer-day",
-          "hour": "Integer-hour"
-        },
-        "products": {
-         "product name":"amount"
-        }
-      }
-    ]
-  }
-```
-###Example
-
-```json
- {
-    "Customerid": "AR-00333",
-    "name": "Kings shop",
-    "location": {
-      "y": -1,
-      "x": 3
-    },
-    "orders": [
-      {
-        "orderDate": {
-          "day": 12,
-          "hour": 5
-        },
-        "deliveryDate": {
-          "day": 15,
-          "hour": 8
-        },
-        "products": {
-         "apple pie":7,
-         "swiss roll":10,
-         "brownies":8,
-         "cup bake":8,
-         "croissant":10
-        }
-      }
-    ]
-  }
-
-```
-<br>
+## IN MESSAGES
+- **performative**: PROPOSE
+- **sender**: order processing agent
+- **receiver**: customer agent
+- **content**:
+{"Sunspear Bakery":{"Donut":"4.54","Bagel":"3.21","Berliner":"2.94","Muffin":"4.43","Bread":"4.7"}}
 
 
 
