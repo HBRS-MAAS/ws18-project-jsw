@@ -28,6 +28,8 @@ public class Start {
     		agents.add(name + ":org.maas.agents.OrderProcessingAgent");
     	}
     	
+    	agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
+    	
     	List<String> cmd = new Vector<>();
     	cmd.add("-agents");
     	StringBuilder sb = new StringBuilder();
