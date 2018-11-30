@@ -64,11 +64,6 @@ public class CustomerAgent extends BaseAgent {
 		total = getOrder(agentName);
 		
 		addBehaviour(new RequestPerformer());
-	    try {
-	    	Thread.sleep(3000);
-	    } catch (InterruptedException e) {
-	    	e.printStackTrace();
-	    }			
 	}
 	
 	protected void takeDown() {
@@ -119,7 +114,7 @@ public class CustomerAgent extends BaseAgent {
 		    	JSONObject order = getCurrentOrder(localDate);
 		    	order = includeLocation(order);
 		    			    	
-		    	//System.out.println("Send order: " + order);
+		    	System.out.println("Send order: " + order);
 		    	
 				msg.setConversationId("customer-order");
 				msg.setLanguage("JSON");
@@ -140,8 +135,9 @@ public class CustomerAgent extends BaseAgent {
 				//System.out.println("Get Proposal");
 				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
-				ACLMessage proposal = myAgent.receive(mt);				
-				
+						
+				MessageTemplate mp = MessageTemplate.MatchPerformative(ACLMessage.PROPOSE);
+				ACLMessage proposal = myAgent.receive(mp);		
 				if (proposal != null) {
 					// Purchase order reply received
 					if (proposal.getPerformative() == ACLMessage.PROPOSE) {

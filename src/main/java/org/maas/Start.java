@@ -17,7 +17,7 @@ public class Start {
     	
     	for (String name : customerName) {
     		agents.add(name + ":org.maas.agents.CustomerAgent");
-    		break;
+    		//break;
     	}
     	
     	Data bakery = new Data();
