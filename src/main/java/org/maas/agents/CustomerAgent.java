@@ -55,6 +55,14 @@ public class CustomerAgent extends BaseAgent {
 	protected void setup() {		
 		super.setup();
 		agentName = getAID().getLocalName();
+		
+		try {
+	    	Thread.sleep(3000);
+	    } catch (InterruptedException e) {
+	    	System.out.println("Customer " + agentName + " is interrupted.");
+	    	e.printStackTrace();
+	    }	
+		
 		System.out.println(agentName + " is ready.");
 		
 		register("Bakery-Customer", "Bakery");
@@ -64,6 +72,7 @@ public class CustomerAgent extends BaseAgent {
 		total = getOrder(agentName);
 		
 		addBehaviour(new RequestPerformer());
+	    		
 	}
 	
 	protected void takeDown() {
@@ -114,7 +123,7 @@ public class CustomerAgent extends BaseAgent {
 		    	JSONObject order = getCurrentOrder(localDate);
 		    	order = includeLocation(order);
 		    			    	
-		    	System.out.println("Send order: " + order);
+		    	//System.out.println("Send order: " + order);
 		    	
 				msg.setConversationId("customer-order");
 				msg.setLanguage("JSON");
@@ -135,9 +144,8 @@ public class CustomerAgent extends BaseAgent {
 				//System.out.println("Get Proposal");
 				
 				// Receive the purchase order reply: Bakery name that sells the order and the price
-						
-				MessageTemplate mp = MessageTemplate.MatchPerformative(ACLMessage.PROPOSE);
-				ACLMessage proposal = myAgent.receive(mp);		
+				ACLMessage proposal = myAgent.receive(mt);				
+				
 				if (proposal != null) {
 					// Purchase order reply received
 					if (proposal.getPerformative() == ACLMessage.PROPOSE) {
