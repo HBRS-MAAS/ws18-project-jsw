@@ -40,14 +40,15 @@ public class OrderProcessingAgent extends BaseAgent {
 	private List<String> productPrice;
 	private String bakeryName;
 	private Data seller = new Data();
+	private int n = 0;
 	
     protected void setup() {
     	super.setup();
     	bakeryName = getAID().getLocalName();
     	
-        System.out.println(bakeryName + " is ready.");
+        System.out.println("Bakery " + bakeryName + " is ready.");
     	
-    	register("Bakery-Seller", "Bakery");
+    	register("OrderProcessing", bakeryName);
     	
     	seller.retrieve("src/main/resources/config/small/bakeries.json");
     	
@@ -60,78 +61,74 @@ public class OrderProcessingAgent extends BaseAgent {
     	//System.out.println("productType: " + productType);
     	//System.out.println("productPrice: " + productPrice);
         
-        addBehaviour(new OfferRequestsServer());
-    }
-      
-    protected void takeDown() {
-        deRegister();
-        System.out.println("\t"+getAID().getLocalName()+" terminating.");
+        //addBehaviour(new OfferRequestsServer());
+    	addBehaviour(new ManageCustomerOrder());
+        
     }
     
-    private class OfferRequestsServer extends CyclicBehaviour {
-    	public void action() {
-    		//Receive order request from a customer
-        	MessageTemplate mr = MessageTemplate.MatchPerformative(ACLMessage.REQUEST);
-            ACLMessage request = myAgent.receive(mr);
-            
-            MessageTemplate mc = MessageTemplate.MatchPerformative(ACLMessage.CONFIRM);
-            ACLMessage confirm = myAgent.receive(mc);
-            
-            //Process the request if it is not empty and it is in JSON language
-            if (request != null) {
-            	JSONObject incomingRequest = new JSONObject();
-            	JSONObject proposal = new JSONObject();
-            	
-            	if (request.getLanguage().equals("JSON")) {
-					try {
-						//System.out.println("Received Request: " + request.getContent());
-						incomingRequest = new JSONObject(request.getContent());
-						
-						proposal = seller.checkAvailability(incomingRequest, bakeryName, productType, productPrice);
-						
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-            	
-            	//Reply the request with a proposal
-                ACLMessage reply = request.createReply();
-                reply.setPerformative(ACLMessage.PROPOSE);
-                //reply.setContent("Got your order.");
-				reply.setLanguage("JSON");
-				reply.setContent(proposal.toString());
-				sendMessage(reply);
-            } else if (confirm != null) {
-            	JSONObject confirmation = new JSONObject();
-    			
-                //Process the request if it is not empty and it is in JSON language
-                if (confirm.getLanguage().equals("JSON")) {
-    					System.out.println(bakeryName + " received confirm: " + confirm.getContent());
-                }
-            } else {
-                //System.out.println("Could not read order");
-                block();
+    private class ManageCustomerOrder extends Behaviour {
+        boolean isDone = false;
+        
+        public void action() {
+            if(!getAllowAction()) {
+                return;
             }
+           	           	
+           	//Receive order from a customer
+    		MessageTemplate mt = MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.CFP), MessageTemplate.MatchPerformative(ACLMessage.INFORM));
+    		ACLMessage message = myAgent.receive(mt);
+    		
+    		if (message != null) {
+    			if (message.getPerformative() == ACLMessage.CFP) {
+                	JSONObject incomingOrder = new JSONObject();
+                	JSONObject proposal = new JSONObject();
+                	
+                	if (message.getLanguage().equals("JSON")) {
+    					try {
+    						//System.out.println(bakeryName + " receive request: " + message.getContent());
+    						incomingOrder = new JSONObject(message.getContent());
+    						
+    						proposal = seller.checkAvailability(incomingOrder, bakeryName, productType, productPrice);
+    						
+    					} catch (JSONException e) {
+    						System.out.println("fail to get content");
+    						e.printStackTrace();
+    					}
+    				} else {
+    					System.out.println("message is not JSON");
+    				}
+                	
+                	//Reply the CFP with a proposal
+                	ACLMessage reply = message.createReply();
+                    reply.setPerformative(ACLMessage.PROPOSE);
+                    //reply.setContent("Got your order.");
+    				reply.setLanguage("JSON");
+    				reply.setContent(proposal.toString());
+    				sendMessage(reply);
+    				//System.out.println("sent reply");
+    				
+    				//System.out.println(bakeryName + " send proposal: " + proposal.toString());
+    				
+    				n++;
+    			}
+    		}
+    		
+    		finished();
+           	//System.out.println("currentHour: " + getCurrentHour());
+           	myAgent.addBehaviour(new ManageCustomerOrder());
+           	isDone = true;
+           
+        }
+
+        
+        public boolean done() {
+            return isDone;
         }
     }
     
-    // Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
-	private class shutdown extends OneShotBehaviour{
-		public void action() {
-			ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
-			Codec codec = new SLCodec();
-			myAgent.getContentManager().registerLanguage(codec);
-			myAgent.getContentManager().registerOntology(JADEManagementOntology.getInstance());
-					shutdownMessage.addReceiver(myAgent.getAMS());
-					shutdownMessage.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
-					shutdownMessage.setOntology(JADEManagementOntology.getInstance().getName());
-			try {
-				myAgent.getContentManager().fillContent(shutdownMessage,new Action(myAgent.getAID(), new ShutdownPlatform()));
-				myAgent.send(shutdownMessage);
-			} catch (Exception e) {
-				//LOGGER.error(e);
-			}
-		}
-	}
+    protected void takeDown() {
+        deRegister();
+        System.out.println("Bakery " + bakeryName + " receive " + n + " order");
+        System.out.println("\t"+getAID().getLocalName()+" terminating.");
+    }
 }

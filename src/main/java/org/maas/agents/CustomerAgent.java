@@ -25,61 +25,72 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.Random;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-@SuppressWarnings("serial")
-public class CustomerAgent extends BaseAgent {	
-	private JSONObject incomingProposal = new JSONObject();
-	private JSONObject confirmation = new JSONObject();
-	private JSONObject combined = new JSONObject();
-	
+public class CustomerAgent extends BaseAgent {
 	private JSONArray dataArray = new JSONArray();
 	private JSONArray orders = new JSONArray();
 	//private JSONObject location = new JSONObject();
 	private Object location = null;
 	
-	private String agentName = "";
+	private String customerName = "";
+	private String customerID = "";
 	
-	private int n = 0;
-	private int total = 0;
+	private int[] latestOrder = new int[2];
 	
 	private AID [] sellerAgents;
 	
-	protected void setup() {		
-		super.setup();
-		agentName = getAID().getLocalName();
-		System.out.println(agentName + " is ready.");
+	private int sum_sent; //number of sent orders
+	private int sum_total; //number o total orders
+	private boolean process_done; //wait until communication with order processing finished
+
+    protected void setup() {
+    	super.setup();
+    	
+    	//Wait until order procesing agent set up
+    	try {
+    		Thread.sleep(3000);
+    	} catch (InterruptedException e) {
+    		e.printStackTrace();
+    	}
+    	
+		customerName = getAID().getLocalName();	
 		
-		register("Bakery-Customer", "Bakery");
+		System.out.println(customerName + " is ready.");
+				
 		getSellers();
 		
-		retrieve("src/main/resources/config/small/clients.json");
-		total = getOrder(agentName);
+		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
 		
-		addBehaviour(new RequestPerformer());
-	    try {
-	    	Thread.sleep(3000);
-	    } catch (InterruptedException e) {
-	    	e.printStackTrace();
-	    }			
-	}
-	
-	protected void takeDown() {
+		retrieve("src/main/resources/config/small/clients.json");
+		sum_total = getOrder(customerName);
+				
+		register("customer", customerID);
+
+        //addBehaviour(new isNewOrderChecker());
+        addBehaviour(new GetCurrentOrder());
+    }
+
+    protected void takeDown() {
 		deRegister();
+		System.out.println("Customer " + customerName + " sent " + orders.length() + " order");
 		System.out.println(getAID().getLocalName() + ": Terminating.");
 	}
 	
 	protected void getSellers() {
         DFAgentDescription template = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType("Bakery-Seller");
+        sd.setType("OrderProcessing");
         template.addServices(sd);
         try {
             DFAgentDescription[] result = DFService.search(CustomerAgent.this, template);
@@ -91,132 +102,55 @@ public class CustomerAgent extends BaseAgent {
         catch (FIPAException fe) {
             fe.printStackTrace();
         }
-    }
+	}
+	
+	private class GetCurrentOrder extends Behaviour {
+		private boolean isDone = false;
+		private boolean passTime = false;
 		
-	private class RequestPerformer extends Behaviour {
-		private MessageTemplate mt;
-		private int step = 0;	
-				
+		@Override
 		public void action() {
-			//if (!baseAgent.getAllowAction()) {
-			//    return;
-			//}
+			if(!getAllowAction()) {
+                return;
+            }
+		    					
+			int hour = getCurrentHour();
+			int day = getCurrentDay();
 			
-			//System.out.println("Action Start");
-			switch (step) {
-			case 0:				
-				// Send the order (message) to all sellers
-				ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-								
-				for (int i = 0; i < sellerAgents.length; ++i) {
-					msg.addReceiver(sellerAgents[i]);
-				}
-								
-				//Check Time -> Later use BaseAgent.java after ClockAgent has been built
-				LocalDate localDate = LocalDate.now();
-				
-				//Get Order at Specified Time
-		    	JSONObject order = getCurrentOrder(localDate);
-		    	order = includeLocation(order);
-		    			    	
-		    	//System.out.println("Send order: " + order);
-		    	
-				msg.setConversationId("customer-order");
-				msg.setLanguage("JSON");
-				msg.setContent(order.toString());
-				msg.addReplyTo(getAID());
-				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
-				sendMessage(msg);
-				
-				// Prepare the template to get proposals
-				mt = MessageTemplate.and(MessageTemplate.MatchConversationId("customer-order"),
-						MessageTemplate.MatchInReplyTo(msg.getReplyWith()));
-				
-				step = 1;
-				n++;
-				break;
-				
-			case 1:
-				//System.out.println("Get Proposal");
-				
-				// Receive the purchase order reply: Bakery name that sells the order and the price
-				ACLMessage proposal = myAgent.receive(mt);				
-				
-				if (proposal != null) {
-					// Purchase order reply received
-					if (proposal.getPerformative() == ACLMessage.PROPOSE) {
-						if (proposal.getLanguage().equals("JSON")) {
-							//System.out.println("Received Proposal: " + proposal.getContent());
-							try {
-								
-								JSONObject Obj1 = new JSONObject(proposal.getContent());
-								JSONObject Obj2 = new JSONObject();
-								
-								String name = proposal.getSender().getLocalName();
-								
-								Obj2 = Obj1.getJSONObject(name);
-								
-								CustomerAgent.this.incomingProposal.put(name, Obj2);
-							} catch (JSONException e) {
-								e.printStackTrace();
-							}
-						}
-					} else {
-						//System.out.println("No reply received");
-						block(); //Wait until receive any reply
-					}
-					
-					if (incomingProposal.length() == sellerAgents.length) {
-						//System.out.println("incomingProposal " + incomingProposal);
-						step = 2;
-					}  
-					
-				}
-				break;
-			case 2:
-				try {
-					confirmation = findTheCheapest(incomingProposal);
-					
-					//System.out.println("Send Confirmation: " + confirmation);
-					
-					//Send the confirmation
-					for (int i = 0; i < sellerAgents.length; ++i) {
-						String name = sellerAgents[i].getLocalName();
-						if (CustomerAgent.this.confirmation.has(name)) {
-							ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
-							confirm.setConversationId("customer-order");
-							confirm.addReceiver(sellerAgents[i]);
-							confirm.setLanguage("JSON");
-							confirm.setContent(CustomerAgent.this.confirmation.getString(name));
-							send(confirm);
-							
-							//System.out.println("confirm " + name + ": " + confirm.getContent());
-						}
-		            }
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				step = 0;
-				break;
-			default:
-				break;
-			}
+			passTime = whenLatestOrder(hour, day);
+			
+			//System.out.println("current hour: " + getCurrentHour());
+			//System.out.println("current day: " + getCurrentDay());
+			
+			//Get Order at Specified Time
+			ArrayList<JSONObject> orderList = getCurrentOrder(hour, day);
+			JSONObject order = new JSONObject();
+			
+	    	while (orderList.size() > 0) {
+	    		//System.out.println(order);
+	    		order = orderList.remove(0);
+	    		CustomerAgent.this.addBehaviour(new CallForProposal(order));
+	    		sum_sent++;
+	    		process_done = false;
+	    	}
+	    	
+	    	//System.out.println("call finish");
+	    	finished();
+	    	myAgent.addBehaviour(new GetCurrentOrder()); //don't call when all order are ordered?
+	    	isDone = true;	    	
 		}
-		
-		//Stop the action loop
+
+		@Override
 		public boolean done() {
-			if (n >= total) {
+			//System.out.println(sum_sent);
+			//System.out.println(sum_total);
+			
+			if (process_done && (sum_sent >= sum_total || passTime == true)) {
 				addBehaviour(new shutdown());
-				//baseAgent.finished(); // calling finished method
-                //myAgent.doDelete();
-                return true;
 			}
-			return false;
+			return isDone;
 		}
 		
-		// Taken from http://www.rickyvanrijn.nl/2017/08/29/how-to-shutdown-jade-agent-platform-programmatically/
 		private class shutdown extends OneShotBehaviour{
 			public void action() {
 				ACLMessage shutdownMessage = new ACLMessage(ACLMessage.REQUEST);
@@ -233,139 +167,382 @@ public class CustomerAgent extends BaseAgent {
 					//LOGGER.error(e);
 				}
 			}
-		}
+		}		
 	}
 	
-	//FUNCTIONS TO MANAGE JSON OBJECTS
-	//Retrieve client data from config file
-	private void retrieve(String fileName) {
-		File file = new File(fileName);
-		String filePath = file.getAbsolutePath();
-		String fileContent = "";	
+	private class CallForProposal extends OneShotBehaviour {
+		private MessageTemplate mt;
+		private JSONObject myOrder = new JSONObject();
 		
-		try {
-			fileContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
-			dataArray = new JSONArray(fileContent);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+		CallForProposal(JSONObject order) {
+			myOrder = order;
 		}
-	}
-	
-	//Get list of order 
-	private int getOrder(String name) {
-		String customerName = "";
-				
-		//Take Orders from Customer (based on the name)
-		try {
-			for (int i = 0; i < dataArray.length(); i++) {
-				customerName = dataArray.getJSONObject(i).getString("name");
-				
-				if (customerName.equals(name)) {
-					orders = dataArray.getJSONObject(i).getJSONArray("orders");
-					//location = dataArray.getJSONObject(i).getJSONObject("location");
-					location = dataArray.getJSONObject(i).get("location");
-					
-					return orders.length();
-				}
+		
+		@Override
+		public void action() {
+			// Send the order (message) to all sellers
+			ACLMessage msg = new ACLMessage(ACLMessage.CFP);
+							
+			for (int i = 0; i < sellerAgents.length; ++i) {
+				msg.addReceiver(sellerAgents[i]);
 			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		
-		return 0;
+			
+			//System.out.println("myOrder: " + myOrder.toString());
+			
+			myOrder = includeLocation(myOrder);		    	
+    		
+    		String orderID = "";
+			try {
+				orderID = myOrder.getString("guid");
+				msg.setConversationId(orderID);
+				msg.setLanguage("JSON");
+				msg.setContent(myOrder.toString());
+				msg.addReplyTo(getAID());
+				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
+				sendMessage(msg);
+				
+				//System.out.println(customerName + " send order: " + msg.toString());
+				
+				// Prepare the template to get proposals
+				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
+						MessageTemplate.MatchInReplyTo(msg.getReplyWith()));
+				
+				CustomerAgent.this.addBehaviour(new ReceiveProposal(mt, myOrder));
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			
+			finished();
+		}		
 	}
 	
-	private JSONObject findTheCheapest(JSONObject proposal) {
-		JSONObject confirmation = new JSONObject();
-		JSONObject product = new JSONObject();
+	// Receive Proposals from Bakeries: Bakery name that sells the order and the price
+	private class ReceiveProposal extends Behaviour {
+		private JSONObject incomingProposal = new JSONObject();
+		private JSONObject myOrder = new JSONObject();
 		
-		List<String> bakeryName = new ArrayList();
-		List<String> productTypes = new ArrayList();
+		private MessageTemplate myTemplate;
+		private boolean isDone = false;
 		
-		String chosenBakery = "";
+		private String orderID = "";
 		
-		//Get All Bakery Name
-		try {
-			Iterator iter = proposal.keys();
-			while(iter.hasNext()) {
-				String key = (String)iter.next();
-				bakeryName.add(key);
+		ReceiveProposal(MessageTemplate mt, JSONObject order) {
+			System.out.println("Received Proposal");
+			myTemplate = mt;
+			myOrder = order;
+		}		
+		
+		@Override
+		public void action() {
+			ACLMessage message = myAgent.receive(myTemplate);				
+			
+			if (message != null) {
+				//Purchase order reply received
+				//System.out.println("Received Message: " + message.getContent());
+				String bakeryName = message.getSender().getLocalName();
+				JSONObject products = new JSONObject();
 				
-				product = proposal.getJSONObject(key);
-				Iterator iter2 = product.keys();
-				while(iter2.hasNext()) {
-					String key2 = (String)iter2.next();
-					if (!productTypes.contains(key2)) {
-						productTypes.add(key2);
+				if (message.getPerformative() == ACLMessage.PROPOSE) {
+					if (message.getLanguage().equals("JSON")) {
+						try {
+							JSONObject proposal = new JSONObject(message.getContent());
+							products = proposal.getJSONObject("products");
+							
+							incomingProposal.put(bakeryName, products);
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+					}
+				} else if (message.getPerformative() == ACLMessage.REFUSE) {
+					if (message.getLanguage().equals("JSON")) {
+						try {
+							incomingProposal.put(bakeryName, products);
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
 					}
 				}
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		
-		//Get The Cheapest Price
-		try {
-			for (String type : productTypes) {
-				Double min_price = Double.MAX_VALUE;
-				for (String name : bakeryName) {
-					product = proposal.getJSONObject(name);	
+				
+				if (incomingProposal.length() == sellerAgents.length) {
+					//System.out.println(incomingProposal.length());
+					//System.out.println(customerName + "receive proposal from " + sellerAgents.length + " sellers");
+					System.out.println("incomingProposal " + incomingProposal);
 					
-					if (min_price > product.getDouble(type) && product.getDouble(type) != 0) {
-						chosenBakery = name;
-						min_price = product.getDouble(type);
-					}
-				}
-				
-				if (confirmation.has(chosenBakery)) {
-					type = type + ", " + confirmation.getString(chosenBakery);
-				}
-				
-				confirmation.put(chosenBakery, type);
+					isDone = true;
+					finished();
+					
+					CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal, myOrder));
+				}  
+			} else {
+				block();
 			}
-		} catch (JSONException e) {
-			e.printStackTrace();
+		}
+
+		@Override
+		public boolean done() {
+			return isDone;
 		}
 		
-		return confirmation;
 	}
 	
-	//Function use LocalDate to check the current world date.
-	//It is currently commented for simulation.
-	//Later the date used will be provided by BaseAgent
-	private JSONObject getCurrentOrder(LocalDate date) {
-		JSONObject order_date = new JSONObject();
+	private class SendConfirmation extends OneShotBehaviour {
+		private JSONObject proposal = new JSONObject();
+		private JSONObject selected = new JSONObject();
+		private JSONObject myOrder = new JSONObject();
+		private JSONObject reOrder = new JSONObject();
 		
-		//Check Date
-		try {
+		SendConfirmation(JSONObject incomingProposal, JSONObject order) {
+			proposal = incomingProposal;
+			myOrder = order;
+		}
+		
+		@Override
+		public void action() {
+			try {
+				selected = findTheCheapest(proposal);
+				
+				//System.out.println("Send Confirmation: " + confirmation);
+				
+				//Send the confirmation
+				for (int i = 0; i < sellerAgents.length; ++i) {
+					String name = sellerAgents[i].getLocalName();
+					if (selected.has(name)) {						
+						//System.out.println("selected " + selected);
+						String products = selected.getString(name); 
+						
+						//System.out.println(products.length());
+						
+						if (products.length() > 0) {
+							reOrder = myOrder;
+							
+							reOrder.put("products", products);
+							
+							ACLMessage confirm = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+							confirm.addReceiver(sellerAgents[i]);
+							confirm.setLanguage("JSON");
+							confirm.setContent(reOrder.toString());
+							send(confirm);
+							
+							//System.out.println("confirm " + name + ": " + confirm.getContent());
+						} else {
+							ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
+							confirm.addReceiver(sellerAgents[i]);
+							confirm.setLanguage("JSON");
+							confirm.setContent("Your bakery is too expensive.. :(");
+							send(confirm);
+							
+							//System.out.println("confirm " + name + ": " + confirm.getContent());
+						}
+					}
+	            }
+				
+				finished();
+				process_done = true;
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
+		}
+	}
+    
+  //FUNCTIONS TO MANAGE JSON OBJECTS
+  	//Retrieve client data from config file
+  	private void retrieve(String fileName) {
+  		File file = new File(fileName);
+  		String filePath = file.getAbsolutePath();
+  		String fileContent = "";	
+  		
+  		try {
+  			fileContent = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+  			dataArray = new JSONArray(fileContent);
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		} catch (IOException e) {
+  			e.printStackTrace();
+  		}
+  	}
+  	
+  	//Get list of order 
+  	private int getOrder(String name) {
+  		String customerName = "";
+  				
+  		//Take Orders from Customer (based on the name)
+  		try {
+  			for (int i = 0; i < dataArray.length(); i++) {
+  				customerName = dataArray.getJSONObject(i).getString("name");
+  				
+  				if (customerName.equals(name)) {
+  					orders = dataArray.getJSONObject(i).getJSONArray("orders");
+  					customerID = dataArray.getJSONObject(i).getString("guid");
+  					//location = dataArray.getJSONObject(i).getJSONObject("location");
+  					location = dataArray.getJSONObject(i).get("location");
+  					
+  					//Should the length reduced by one?
+  					System.out.println("Customer " + customerName + " has " + (orders.length() - 1) + " order");
+  					
+  					return orders.length() - 1;
+  				}
+  			}
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		}
+  		
+  		return 0;
+  	}
+  	
+  	
+  	private boolean whenLatestOrder(int currentHour, int currentDay) {
+  		JSONObject order_time = new JSONObject();
+
+  		try {
+			ArrayList<Date> date = new ArrayList<>();
+			
 			for (int i = 0; i < orders.length(); i++) {
-				order_date = orders.getJSONObject(i).getJSONObject("order_date");
+				order_time = orders.getJSONObject(i).getJSONObject("order_date");
 				
-				int day = order_date.getInt("hour");
-				int month = order_date.getInt("day");
+				int day = order_time.getInt("day");
+				int hour = order_time.getInt("hour");
 				
-				/*if ((day == date.getDayOfMonth()) && (month == date.getMonthValue()) ) {
-					return orders.getJSONObject(i);
-				}*/
-				
-				return orders.getJSONObject(i);
+				date.add(new Date(hour, day));
 			}
+			
+			Comparator<Date> comparator = Comparator.comparingInt(Date::getDay).thenComparingInt(Date::getHour);
+
+		    // Sort the stream:
+		    Stream<Date> DateStream = date.stream().sorted(comparator);
+
+		    // Make sure that the output is as expected:
+		    List<Date> sortedDate = DateStream.collect(Collectors.toList());
+		    
+		    /*for (int i = 0; i < sortedDate.size(); i++) {
+		    	System.out.println(sortedDate.get(i).getDay() + " ~~ " + sortedDate.get(i).getHour());
+		    }*/
+		    
+		    int lastDay = sortedDate.get(sortedDate.size() - 1).getDay();
+		    int lastHour = sortedDate.get(sortedDate.size() - 1).getHour();
+		    
+		    if (currentDay >= lastDay && currentHour >= lastHour) {
+		    	return true;
+		    }
+			
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 		
-		return null;
-	}
-	
-	private JSONObject includeLocation(JSONObject order) {
-		try {
-			order.put("location", location);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-		
-		return order;
-	}
+  		return false;	
+  	} 
+  	
+  	public static class Date {
+  	    public int hour;
+  	    public int day;
+  		
+  		public Date(int hour, int day)
+  	    {
+  	        this.hour = hour;
+  	        this.day = day;
+  	    }
+  		
+  		public int getHour() {
+  			return this.hour;
+  		}
+  		
+  		public int getDay() {
+  			return this.day;
+  		}
+  	}
+
+  	private JSONObject findTheCheapest(JSONObject proposal) {
+  		JSONObject confirmation = new JSONObject();
+  		JSONObject product = new JSONObject();
+  		
+  		List<String> bakeryName = new ArrayList<String>();
+  		List<String> productTypes = new ArrayList<String>();
+  		
+  		String chosenBakery = "";
+  		
+  		//Get All Bakery Name
+  		try {
+  			Iterator<?> iter = proposal.keys();
+  			while(iter.hasNext()) {
+  				String key = (String)iter.next();
+  				bakeryName.add(key);
+  				
+  				product = proposal.getJSONObject(key);
+  				Iterator<?> iter2 = product.keys();
+  				while(iter2.hasNext()) {
+  					String key2 = (String)iter2.next();
+  					if (!productTypes.contains(key2)) {
+  						productTypes.add(key2);
+  					}
+  				}
+  			}
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		}
+  		
+  		//Get The Cheapest Price
+  		try {
+  			for (String type : productTypes) {
+  				Double min_price = Double.MAX_VALUE;
+  				for (String name : bakeryName) {
+  					product = proposal.getJSONObject(name);	
+  					
+  					if (min_price > product.getDouble(type) && product.getDouble(type) != 0) {
+  						chosenBakery = name;
+  						min_price = product.getDouble(type);
+  					}
+  				}
+  				
+  				if (confirmation.has(chosenBakery)) {
+  					type = type + ", " + confirmation.getString(chosenBakery);
+  				}
+  				
+  				confirmation.put(chosenBakery, type);
+  			}
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		}
+  		
+  		return confirmation;
+  	}
+  	
+  	private ArrayList<JSONObject> getCurrentOrder(int currentHour, int currentDay) {
+  		JSONObject order_time = new JSONObject();
+  		ArrayList<JSONObject> orderList = new ArrayList<JSONObject>();
+  		
+  		//Check Date
+  		try {
+  			int n = 0;
+  			for (int i = 0; i < orders.length(); i++) {
+  				order_time = orders.getJSONObject(i).getJSONObject("order_date");
+  				
+  				int hour = order_time.getInt("hour");
+  				int day = order_time.getInt("day");
+  				
+  				if ((hour == currentHour) && (day == currentDay)) {
+  					orderList.add(orders.getJSONObject(i));
+  					n++;
+  				}
+  			}
+  			
+  			if (n > 0) {
+  				System.out.println(orderList.toString());
+  			}
+  			
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		}
+  		
+  		return orderList;
+  	}
+  	
+  	private JSONObject includeLocation(JSONObject order) {
+  		try {
+  			order.put("location", location);
+  		} catch (JSONException e) {
+  			e.printStackTrace();
+  		}
+  		
+  		return order;
+  	}
 }
