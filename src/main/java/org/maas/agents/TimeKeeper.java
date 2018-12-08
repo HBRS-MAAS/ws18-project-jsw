@@ -61,7 +61,7 @@ public class TimeKeeper extends Agent{
             List<DFAgentDescription> agents = getAllAgents();
             currentTimeStep++;
             countAgentsReplied = agents.size();
-            System.out.println(">>>>> " + currentTimeStep + " <<<<<");
+            //System.out.println(">>>>> " + currentTimeStep + " <<<<<");
             for (DFAgentDescription agent : agents) {
                 ACLMessage timeMessage = new ACLMessage(55);
                 timeMessage.addReceiver(agent.getName());
