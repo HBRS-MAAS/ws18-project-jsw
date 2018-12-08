@@ -103,14 +103,18 @@ public class Data{
 	}
 	
 	public JSONObject checkAvailability(JSONObject order, String bakeryName, 
-			List<String> sellType, List<String> sellPrice) {
+		List<String> sellType, List<String> sellPrice) {
 		JSONObject orderProduct = new JSONObject();
 		JSONObject orderPrice = new JSONObject();
 		JSONObject bakeryPrice = new JSONObject();
 		List<String> orderType = new ArrayList();
+		String orderID = "";		
 		
 		//Get All Order Type
 		try {
+			orderID = order.getString("guid");
+			bakeryPrice.put("guid", orderID);
+			
 			orderProduct = order.getJSONObject("products");
 			
 			Iterator iter = orderProduct.keys();
@@ -132,12 +136,12 @@ public class Data{
 					}
 				}
 			}
-			bakeryPrice.put(bakeryName, orderPrice);
+			bakeryPrice.put("products", orderPrice);
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
 		
-		//System.out.println("Bakery Price: " + bakeryPrice);
+		System.out.println("Bakery Price: " + bakeryPrice);
 		
 		return bakeryPrice;		
 	}

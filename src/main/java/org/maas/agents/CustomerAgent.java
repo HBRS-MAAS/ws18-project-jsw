@@ -171,7 +171,7 @@ public class CustomerAgent extends BaseAgent {
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
 						MessageTemplate.MatchInReplyTo(msg.getReplyWith()));
 				
-				CustomerAgent.this.addBehaviour(new ReceiveProposal(mt));
+				CustomerAgent.this.addBehaviour(new ReceiveProposal(mt, myOrder));
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
@@ -183,34 +183,44 @@ public class CustomerAgent extends BaseAgent {
 	// Receive Proposals from Bakeries: Bakery name that sells the order and the price
 	private class ReceiveProposal extends Behaviour {
 		private JSONObject incomingProposal = new JSONObject();
+		private JSONObject myOrder = new JSONObject();
 		
 		private MessageTemplate myTemplate;
 		private boolean isDone = false;
 		
-		ReceiveProposal(MessageTemplate mt) {
+		private String orderID = "";
+		
+		ReceiveProposal(MessageTemplate mt, JSONObject order) {
 			System.out.println("Received Proposal");
 			myTemplate = mt;
+			myOrder = order;
 		}		
 		
 		@Override
 		public void action() {
-			ACLMessage proposal = myAgent.receive(myTemplate);				
+			ACLMessage message = myAgent.receive(myTemplate);				
 			
-			if (proposal != null) {
-				// Purchase order reply received
-				if (proposal.getPerformative() == ACLMessage.PROPOSE) {
-					if (proposal.getLanguage().equals("JSON")) {
-						//System.out.println("Received Proposal: " + proposal.getContent());
+			if (message != null) {
+				//Purchase order reply received
+				//System.out.println("Received Message: " + message.getContent());
+				String bakeryName = message.getSender().getLocalName();
+				JSONObject products = new JSONObject();
+				
+				if (message.getPerformative() == ACLMessage.PROPOSE) {
+					if (message.getLanguage().equals("JSON")) {
 						try {
+							JSONObject proposal = new JSONObject(message.getContent());
+							products = proposal.getJSONObject("products");
 							
-							JSONObject Obj1 = new JSONObject(proposal.getContent());
-							JSONObject Obj2 = new JSONObject();
-							
-							String name = proposal.getSender().getLocalName();
-							
-							Obj2 = Obj1.getJSONObject(name);
-							
-							incomingProposal.put(name, Obj2);
+							incomingProposal.put(bakeryName, products);
+						} catch (JSONException e) {
+							e.printStackTrace();
+						}
+					}
+				} else if (message.getPerformative() == ACLMessage.REFUSE) {
+					if (message.getLanguage().equals("JSON")) {
+						try {
+							incomingProposal.put(bakeryName, products);
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
@@ -225,12 +235,11 @@ public class CustomerAgent extends BaseAgent {
 					isDone = true;
 					finished();
 					
-					CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal));
+					CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal, myOrder));
 				}  
 			} else {
 				block();
 			}
-			
 		}
 
 		@Override
@@ -242,33 +251,56 @@ public class CustomerAgent extends BaseAgent {
 	
 	private class SendConfirmation extends OneShotBehaviour {
 		private JSONObject proposal = new JSONObject();
-		private JSONObject confirmation = new JSONObject();
+		private JSONObject selected = new JSONObject();
+		private JSONObject myOrder = new JSONObject();
+		private JSONObject reOrder = new JSONObject();
 		
-		SendConfirmation(JSONObject incomingProposal) {
+		SendConfirmation(JSONObject incomingProposal, JSONObject order) {
 			proposal = incomingProposal;
+			myOrder = order;
 		}
 		
 		@Override
 		public void action() {
 			try {
-				confirmation = findTheCheapest(proposal);
+				selected = findTheCheapest(proposal);
 				
 				//System.out.println("Send Confirmation: " + confirmation);
 				
 				//Send the confirmation
 				for (int i = 0; i < sellerAgents.length; ++i) {
 					String name = sellerAgents[i].getLocalName();
-					if (confirmation.has(name)) {
-						ACLMessage confirm = new ACLMessage(ACLMessage.CONFIRM);
-						confirm.setConversationId("customer-order");
-						confirm.addReceiver(sellerAgents[i]);
-						confirm.setLanguage("JSON");
-						confirm.setContent(confirmation.getString(name));
-						send(confirm);
+					if (selected.has(name)) {						
+						System.out.println("selected " + selected);
+						String products = selected.getString(name); 
 						
-						System.out.println("confirm " + name + ": " + confirm.getContent());
+						System.out.println(products.length());
+						
+						if (products.length() > 0) {
+							reOrder = myOrder;
+							
+							reOrder.put("products", products);
+							
+							ACLMessage confirm = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+							confirm.addReceiver(sellerAgents[i]);
+							confirm.setLanguage("JSON");
+							confirm.setContent(reOrder.toString());
+							send(confirm);
+							
+							System.out.println("confirm " + name + ": " + confirm.getContent());
+						} else {
+							ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
+							confirm.addReceiver(sellerAgents[i]);
+							confirm.setLanguage("JSON");
+							confirm.setContent("Your bakery is too expensive.. :(");
+							send(confirm);
+							
+							System.out.println("confirm " + name + ": " + confirm.getContent());
+						}
 					}
 	            }
+				
+				finished();
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
