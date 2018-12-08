@@ -45,6 +45,7 @@ public abstract class BaseAgent extends Agent {
         catch (FIPAException fe) {
             fe.printStackTrace();
         }
+        //System.out.println("\nWARNING: getCurrentDay and getCurrentHour will be deprecated in future.\n");
     }
     
     /* This function removes the agent from yellow pages
@@ -57,6 +58,7 @@ public abstract class BaseAgent extends Agent {
         catch (FIPAException fe) {
             fe.printStackTrace();
         }
+        //System.out.println("\nWARNING: getCurrentDay and getCurrentHour will be deprecated in future.\n");
     }
 
     /* This function sends finished message to clockAgent
@@ -64,6 +66,7 @@ public abstract class BaseAgent extends Agent {
      * after the agent is done with the task it has to perform in a time step.
      */
     protected void finished(){
+    	//System.out.println("finished");
         this.allowAction = false;
         ACLMessage finish = new ACLMessage(ACLMessage.INFORM);
         finish.addReceiver(this.clockAgent);

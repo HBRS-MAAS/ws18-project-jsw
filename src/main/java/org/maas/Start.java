@@ -11,12 +11,18 @@ public class Start {
 	public static void main(String[] args) {
     	List<String> agents = new Vector<>();
     	
+    	agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
+    	
     	Data customer = new Data();
     	customer.retrieve("src/main/resources/config/small/clients.json");
     	customerName = customer.getName();
     	
+    	int n = 0;
     	for (String name : customerName) {
     		agents.add(name + ":org.maas.agents.CustomerAgent");
+    		
+    		//n++;
+    		//if (n > 2) {break;}
     		//break;
     	}
     	
@@ -28,7 +34,7 @@ public class Start {
     		agents.add(name + ":org.maas.agents.OrderProcessingAgent");
     	}
     	
-    	agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
+    	
     	
     	List<String> cmd = new Vector<>();
     	cmd.add("-agents");

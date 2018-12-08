@@ -81,12 +81,17 @@ public class TimeKeeper extends Agent{
             this.agents = new Vector<AID> ();
         }
 		public void action() {
+			//System.out.println("timestep");
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 			ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
                 AID agent = msg.getSender();
+                //System.out.println("Time keeper get request to inform from " + agent.getLocalName());
+                //System.out.println(!this.agents.contains(agent));
+                //System.out.println(this.agents);
                 if (!this.agents.contains(agent)){
-                    this.agents.add(agent);
+                	//System.out.println(countAgentsReplied);
+                	this.agents.add(agent);
                     countAgentsReplied--;
                     if (countAgentsReplied <= 0){
                         myAgent.addBehaviour(new SendTimeStep());
