@@ -38,22 +38,22 @@ import org.maas.utils.Data;
 public class OrderProcessingAgent extends BaseAgent {
 	private List<String> productType;
 	private List<String> productPrice;
-	private String bakeryName;
+	private String bakeryID;
 	private Data seller = new Data();
 	private int n = 0;
 	
     protected void setup() {
     	super.setup();
-    	bakeryName = getAID().getLocalName();
+    	bakeryID = getAID().getLocalName();
     	
-        System.out.println("Bakery " + bakeryName + " is ready.");
+        System.out.println(bakeryID + " is ready.");
     	
-    	register("OrderProcessing", bakeryName);
+    	register("OrderProcessing", bakeryID);
     	
     	seller.retrieve("src/main/resources/config/small/bakeries.json");
     	
     	Map<String,List<String>> map = new HashMap();
-    	map = seller.getProduct(bakeryName);
+    	map = seller.getProduct(bakeryID);
     	
     	productType = map.get("productType");
     	productPrice = map.get("productPrice");
@@ -88,7 +88,7 @@ public class OrderProcessingAgent extends BaseAgent {
     						//System.out.println(bakeryName + " receive request: " + message.getContent());
     						incomingOrder = new JSONObject(message.getContent());
     						
-    						proposal = seller.checkAvailability(incomingOrder, bakeryName, productType, productPrice);
+    						proposal = seller.checkAvailability(incomingOrder, bakeryID, productType, productPrice);
     						
     					} catch (JSONException e) {
     						System.out.println("fail to get content");
@@ -128,7 +128,7 @@ public class OrderProcessingAgent extends BaseAgent {
     
     protected void takeDown() {
         deRegister();
-        System.out.println("Bakery " + bakeryName + " receive " + n + " order");
-        System.out.println("\t"+getAID().getLocalName()+" terminating.");
+        System.out.println(bakeryID + " receive " + n + " order");
+        System.out.println("\t"+bakeryID+" terminating.");
     }
 }
