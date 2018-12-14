@@ -84,7 +84,7 @@ public class CustomerAgent extends BaseAgent {
 
     protected void takeDown() {
 		deRegister();
-		System.out.println(customerID + " sent " + sum_total + " order");
+		System.out.println(customerID + " sent " + sum_sent + " order");
 		System.out.println(customerID + ": Terminating.");
 	}
 	
@@ -118,6 +118,9 @@ public class CustomerAgent extends BaseAgent {
 			int hour = getCurrentHour();
 			int day = getCurrentDay();
 			
+			//System.out.println("current hour: " + getCurrentHour());
+			//System.out.println("current day: " + getCurrentDay());
+			
 			if (day > latestOrder[0] && hour > latestOrder[1]) {
 				System.out.println("It passed time");
 				passTime = true;
@@ -142,13 +145,14 @@ public class CustomerAgent extends BaseAgent {
 		    	myAgent.addBehaviour(new GetCurrentOrder()); //don't call when all order are ordered?
 			}
 			
-			//System.out.println("current hour: " + getCurrentHour());
-			//System.out.println("current day: " + getCurrentDay());
+			//Inform the order processing the customer doesn't want to buy anything at the time
+			/*ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+			for (int i = 0; i < sellerAgents.length; ++i) {
+				msg.addReceiver(sellerAgents[i]);
+			}
+			msg.setContent("We don't want to buy anything now!");
+			sendMessage(msg);*/
 			
-			//Get Order at Specified Time
-			ArrayList<JSONObject> orderList = getCurrentOrder(hour, day);
-			JSONObject order = new JSONObject();
-			    	
 	    	//System.out.println("call finish");
 	    	finished();
 	    	isDone = true;	    	
@@ -162,6 +166,7 @@ public class CustomerAgent extends BaseAgent {
 			if (process_done && (sum_sent >= sum_total || passTime == true)) {
 				addBehaviour(new shutdown());
 			}
+			
 			return isDone;
 		}
 		
@@ -215,7 +220,7 @@ public class CustomerAgent extends BaseAgent {
 				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
 				sendMessage(msg);
 				
-				//System.out.println(customerName + " send order: " + msg.toString());
+				System.out.println(customerID + " send order: " + msg.getContent().toString());
 				
 				// Prepare the template to get proposals
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
@@ -240,6 +245,8 @@ public class CustomerAgent extends BaseAgent {
 		
 		private String orderID = "";
 		
+		private int receivedReply = 0;
+		
 		ReceiveProposal(MessageTemplate mt, JSONObject order) {
 			//System.out.println("Received Proposal");
 			myTemplate = mt;
@@ -263,29 +270,30 @@ public class CustomerAgent extends BaseAgent {
 							products = proposal.getJSONObject("products");
 							
 							incomingProposal.put(bakeryName, products);
+							
+							receivedReply++;
 						} catch (JSONException e) {
 							e.printStackTrace();
 						}
 					}
 				} else if (message.getPerformative() == ACLMessage.REFUSE) {
 					if (message.getLanguage().equals("JSON")) {
-						try {
-							incomingProposal.put(bakeryName, products);
-						} catch (JSONException e) {
-							e.printStackTrace();
-						}
+						receivedReply++;
 					}
 				}
 				
-				if (incomingProposal.length() == sellerAgents.length) {
-					//System.out.println(incomingProposal.length());
-					//System.out.println(customerName + "receive proposal from " + sellerAgents.length + " sellers");
-					//System.out.println("incomingProposal " + incomingProposal);
+				if (receivedReply == sellerAgents.length) {
+					System.out.println(receivedReply);
+					System.out.println("incomingProposal " + incomingProposal);
 					
 					isDone = true;
 					finished();
 					
-					CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal, myOrder));
+					if (!incomingProposal.isEmpty()) {
+						CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal, myOrder));
+					} else {
+						System.out.println("No bakery accept my order.. >_<");
+					}
 				}  
 			} else {
 				block();
@@ -313,7 +321,7 @@ public class CustomerAgent extends BaseAgent {
 		@Override
 		public void action() {
 			try {
-				selected = findTheCheapest(proposal);
+				selected = findTheCheapest(proposal, myOrder);
 				
 				//System.out.println("Send Confirmation: " + confirmation);
 				
@@ -322,14 +330,16 @@ public class CustomerAgent extends BaseAgent {
 					String name = sellerAgents[i].getLocalName();
 					if (selected.has(name)) {						
 						//System.out.println("selected " + selected);
-						String products = selected.getString(name); 
+						JSONObject products = selected.getJSONObject(name); 
 						
 						//System.out.println(products.length());
 						
-						if (products.length() > 0) {
+						if (!products.isEmpty()) {
 							reOrder = myOrder;
 							
 							reOrder.put("products", products);
+							
+							JSONObject newProductList = new JSONObject();
 							
 							ACLMessage confirm = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
 							confirm.addReceiver(sellerAgents[i]);
@@ -337,16 +347,16 @@ public class CustomerAgent extends BaseAgent {
 							confirm.setContent(reOrder.toString());
 							send(confirm);
 							
-							//System.out.println("confirm " + name + ": " + confirm.getContent());
-						} else {
-							ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
-							confirm.addReceiver(sellerAgents[i]);
-							confirm.setLanguage("JSON");
-							confirm.setContent("Your bakery is too expensive.. :(");
-							send(confirm);
-							
-							//System.out.println("confirm " + name + ": " + confirm.getContent());
-						}
+							System.out.println(customerID + "accept " + name + ": " + confirm.getContent());
+						} 
+					} else {
+						ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
+						confirm.addReceiver(sellerAgents[i]);
+						confirm.setLanguage("JSON");
+						confirm.setContent("Your bakery is too expensive.. :(");
+						send(confirm);
+						
+						System.out.println(customerID + "reject " + name + ": " + confirm.getContent());
 					}
 	            }
 				
@@ -464,53 +474,43 @@ public class CustomerAgent extends BaseAgent {
   		}
   	}
 
-  	private JSONObject findTheCheapest(JSONObject proposal) {
+  	private JSONObject findTheCheapest(JSONObject proposal, JSONObject myOrder) {
   		JSONObject confirmation = new JSONObject();
-  		JSONObject product = new JSONObject();
-  		
-  		List<String> bakeryName = new ArrayList<String>();
-  		List<String> productTypes = new ArrayList<String>();
+  		JSONObject proposedPrice = new JSONObject();
   		
   		String chosenBakery = "";
   		
-  		//Get All Bakery Name
-  		try {
-  			Iterator<?> iter = proposal.keys();
-  			while(iter.hasNext()) {
-  				String key = (String)iter.next();
-  				bakeryName.add(key);
-  				
-  				product = proposal.getJSONObject(key);
-  				Iterator<?> iter2 = product.keys();
-  				while(iter2.hasNext()) {
-  					String key2 = (String)iter2.next();
-  					if (!productTypes.contains(key2)) {
-  						productTypes.add(key2);
-  					}
-  				}
-  			}
-  		} catch (JSONException e) {
-  			e.printStackTrace();
-  		}
+  		JSONObject orderedProduct = new JSONObject();
+  		orderedProduct = myOrder.getJSONObject("products");
   		
-  		//Get The Cheapest Price
   		try {
-  			for (String type : productTypes) {
+  			Iterator<?> iter = orderedProduct.keys();
+  			while(iter.hasNext()) {
+  				String type = (String)iter.next();
+  			
+  				JSONObject selectedProduct = new JSONObject();
   				Double min_price = Double.MAX_VALUE;
-  				for (String name : bakeryName) {
-  					product = proposal.getJSONObject(name);	
+  				for (AID seller : sellerAgents) {
+  					String name = seller.getLocalName();
+  					proposedPrice = proposal.getJSONObject(name);	
   					
-  					if (min_price > product.getDouble(type) && product.getDouble(type) != 0) {
+  					if (min_price > proposedPrice.getDouble(type) && proposedPrice.getDouble(type) != 0) {
   						chosenBakery = name;
-  						min_price = product.getDouble(type);
+  						min_price = proposedPrice.getDouble(type);
   					}
   				}
   				
   				if (confirmation.has(chosenBakery)) {
-  					type = type + ", " + confirmation.getString(chosenBakery);
-  				}
+  					selectedProduct = confirmation.getJSONObject(chosenBakery);
+  					//type = type + ", " + confirmation.getString(chosenBakery);
+  				} 				
   				
-  				confirmation.put(chosenBakery, type);
+  				int amount = myOrder.getJSONObject("products").getInt(type);
+  				selectedProduct.put(type, amount);
+  				
+  				//System.out.println("Selected Product: " + selectedProduct.toString());
+  				
+  				confirmation.put(chosenBakery, selectedProduct);
   			}
   		} catch (JSONException e) {
   			e.printStackTrace();
