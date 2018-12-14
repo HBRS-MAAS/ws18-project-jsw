@@ -5,8 +5,8 @@ import java.util.Vector;
 import org.maas.utils.*;
 
 public class Start {
-	private static List<String> customerName;
-	private static List<String> bakeryName;
+	private static List<String> customerID;
+	private static List<String> bakeryID;
 	
 	public static void main(String[] args) {
     	List<String> agents = new Vector<>();
@@ -15,11 +15,11 @@ public class Start {
     	
     	Data customer = new Data();
     	customer.retrieve("src/main/resources/config/small/clients.json");
-    	customerName = customer.getName();
+    	customerID = customer.getID();
     	
     	int n = 0;
-    	for (String name : customerName) {
-    		agents.add(name + ":org.maas.agents.CustomerAgent");
+    	for (String id : customerID) {
+    		agents.add(id + ":org.maas.agents.CustomerAgent");
     		
     		//n++;
     		//if (n > 2) {break;}
@@ -28,10 +28,10 @@ public class Start {
     	
     	Data bakery = new Data();
     	bakery.retrieve("src/main/resources/config/small/bakeries.json");
-    	bakeryName = bakery.getName();
+    	bakeryID = bakery.getID();
     	
-    	for (String name : bakeryName) {
-    		agents.add(name + ":org.maas.agents.OrderProcessingAgent");
+    	for (String id : bakeryID) {
+    		agents.add(id + ":org.maas.agents.OrderProcessingAgent");
     	}
     	
     	

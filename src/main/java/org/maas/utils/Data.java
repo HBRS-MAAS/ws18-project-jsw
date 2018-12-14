@@ -57,15 +57,30 @@ public class Data{
 		return name;
 	}
 	
-	public int getOrder(String name) {
-		String customerName = "";
+	public List<String> getID() {
+		List<String> id = new ArrayList(); 
+		
+		try {
+			for (int i = 0; i < dataArray.length(); i++) {
+				JSONObject customerData = dataArray.getJSONObject(i);
+				id.add(customerData.getString("guid"));
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		return id;
+	}
+	
+	public int getOrder(String id) {
+		String customerID = "";
 				
 		//Take Orders from Customer (based on the name)
 		try {
 			for (int i = 0; i < dataArray.length(); i++) {
-				customerName = dataArray.getJSONObject(i).getString("name");
+				customerID = dataArray.getJSONObject(i).getString("guid");
 				
-				if (customerName.equals(name)) {
+				if (customerID.equals(id)) {
 					orders = dataArray.getJSONObject(i).getJSONArray("orders");
 					
 					return orders.length();
@@ -141,13 +156,13 @@ public class Data{
 			e.printStackTrace();
 		}
 		
-		System.out.println("Bakery Price: " + bakeryPrice);
+		//System.out.println("Bakery Price: " + bakeryPrice);
 		
 		return bakeryPrice;		
 	}
 	
-    public Map<String, List<String>> getProduct(String name) {
-    	String bakeryName = "";
+    public Map<String, List<String>> getProduct(String id) {
+    	String bakeryID = "";
 		JSONArray products = new JSONArray();
 		
 		List<String> productType = new ArrayList();
@@ -156,9 +171,9 @@ public class Data{
 		//Get Product List
 		try {
 			for (int i = 0; i < dataArray.length(); i++) {
-				bakeryName = dataArray.getJSONObject(i).getString("name");
+				bakeryID = dataArray.getJSONObject(i).getString("guid");
 				
-				if (bakeryName.equals(name)) {
+				if (bakeryID.equals(id)) {
 					products = dataArray.getJSONObject(i).getJSONArray("products");
 					
 					for (int j = 0; j < products.length(); j++) {
