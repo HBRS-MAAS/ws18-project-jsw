@@ -11,6 +11,9 @@ import jade.domain.JADEAgentManagement.JADEManagementOntology;
 import jade.domain.JADEAgentManagement.ShutdownPlatform;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -37,6 +40,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import org.maas.CustomerGUI;
+
 public class CustomerAgent extends BaseAgent {
 	private JSONArray dataArray = new JSONArray();
 	private JSONArray orders = new JSONArray();
@@ -56,7 +61,7 @@ public class CustomerAgent extends BaseAgent {
 
     protected void setup() {
     	super.setup();
-    	
+	
     	//Wait until order procesing agent set up
     	try {
     		Thread.sleep(3000);
@@ -73,13 +78,23 @@ public class CustomerAgent extends BaseAgent {
 		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
 		
 		retrieve("src/main/resources/config/small/clients.json");
+		
+		new Thread() {
+            @Override
+            public void run() {
+            	CustomerGUI customerGUI = new CustomerGUI();
+            	//customerGUI.init(dataArray);
+            	customerGUI.open();
+            }
+        }.start();
+		
 		sum_total = getOrder(customerID);
 		latestOrder = whenLatestOrder();
 				
 		register("customer", customerID);
 
-        //addBehaviour(new isNewOrderChecker());
         addBehaviour(new GetCurrentOrder());
+        addBehaviour(new ControlGUI());
     }
 
     protected void takeDown() {
@@ -103,6 +118,20 @@ public class CustomerAgent extends BaseAgent {
         catch (FIPAException fe) {
             fe.printStackTrace();
         }
+	}
+	
+	private class ControlGUI extends Behaviour {
+
+		@Override
+		public void action() {
+			
+		}
+
+		@Override
+		public boolean done() {
+			return false;
+		}
+		
 	}
 	
 	private class GetCurrentOrder extends Behaviour {
@@ -136,7 +165,7 @@ public class CustomerAgent extends BaseAgent {
 				
 		    	while (orderList.size() > 0) {
 		    		order = orderList.remove(0);
-		    		System.out.println(order);
+		    		//System.out.println(order);
 		    		CustomerAgent.this.addBehaviour(new CallForProposal(order));
 		    		sum_sent++;
 		    		process_done = false;
@@ -220,7 +249,7 @@ public class CustomerAgent extends BaseAgent {
 				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
 				sendMessage(msg);
 				
-				System.out.println(customerID + " send order: " + msg.getContent().toString());
+				//System.out.println(customerID + " send order: " + msg.getContent().toString());
 				
 				// Prepare the template to get proposals
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
@@ -277,14 +306,12 @@ public class CustomerAgent extends BaseAgent {
 						}
 					}
 				} else if (message.getPerformative() == ACLMessage.REFUSE) {
-					if (message.getLanguage().equals("JSON")) {
-						receivedReply++;
-					}
+					receivedReply++;
 				}
 				
 				if (receivedReply == sellerAgents.length) {
 					System.out.println(receivedReply);
-					System.out.println("incomingProposal " + incomingProposal);
+					//System.out.println("incomingProposal " + incomingProposal);
 					
 					isDone = true;
 					finished();
@@ -338,16 +365,14 @@ public class CustomerAgent extends BaseAgent {
 							reOrder = myOrder;
 							
 							reOrder.put("products", products);
-							
-							JSONObject newProductList = new JSONObject();
-							
+														
 							ACLMessage confirm = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
 							confirm.addReceiver(sellerAgents[i]);
 							confirm.setLanguage("JSON");
 							confirm.setContent(reOrder.toString());
 							send(confirm);
 							
-							System.out.println(customerID + "accept " + name + ": " + confirm.getContent());
+							//System.out.println(customerID + " accept " + name + ": " + confirm.getContent());
 						} 
 					} else {
 						ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
@@ -356,7 +381,7 @@ public class CustomerAgent extends BaseAgent {
 						confirm.setContent("Your bakery is too expensive.. :(");
 						send(confirm);
 						
-						System.out.println(customerID + "reject " + name + ": " + confirm.getContent());
+						//System.out.println(customerID + " reject " + name + ": " + confirm.getContent());
 					}
 	            }
 				
@@ -400,7 +425,7 @@ public class CustomerAgent extends BaseAgent {
   					location = dataArray.getJSONObject(i).get("location");
   					
   					//Should the length reduced by one?
-  					System.out.println(customerID + " has " + (orders.length() - 1) + " order");
+  					//System.out.println(customerID + " has " + (orders.length() - 1) + " order");
   					
   					return orders.length() - 1;
   				}
@@ -411,7 +436,7 @@ public class CustomerAgent extends BaseAgent {
   		
   		return 0;
   	}
-  	  	
+  	
   	//Get the latest order date, so that later it will be used to terminated after it pass the time
   	private int[] whenLatestOrder() {
   		JSONObject order_time = new JSONObject();
