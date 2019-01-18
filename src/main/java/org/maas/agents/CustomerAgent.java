@@ -40,7 +40,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import org.maas.CustomerGUI;
+
 
 public class CustomerAgent extends BaseAgent {
 	private JSONArray dataArray = new JSONArray();
@@ -79,14 +79,7 @@ public class CustomerAgent extends BaseAgent {
 		
 		retrieve("src/main/resources/config/small/clients.json");
 		
-		new Thread() {
-            @Override
-            public void run() {
-            	CustomerGUI customerGUI = new CustomerGUI();
-            	//customerGUI.init(dataArray);
-            	customerGUI.open();
-            }
-        }.start();
+
 		
 		sum_total = getOrder(customerID);
 		latestOrder = whenLatestOrder();
@@ -94,7 +87,7 @@ public class CustomerAgent extends BaseAgent {
 		register("customer", customerID);
 
         addBehaviour(new GetCurrentOrder());
-        addBehaviour(new ControlGUI());
+        
     }
 
     protected void takeDown() {
@@ -120,19 +113,7 @@ public class CustomerAgent extends BaseAgent {
         }
 	}
 	
-	private class ControlGUI extends Behaviour {
-
-		@Override
-		public void action() {
-			
-		}
-
-		@Override
-		public boolean done() {
-			return false;
-		}
-		
-	}
+	
 	
 	private class GetCurrentOrder extends Behaviour {
 		private boolean isDone = false;
