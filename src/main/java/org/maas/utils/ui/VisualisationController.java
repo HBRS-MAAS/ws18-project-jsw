@@ -26,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
+
 public class VisualisationController implements Initializable  {
 
 	@FXML
@@ -64,7 +65,7 @@ public class VisualisationController implements Initializable  {
 	private JSONArray orders = new  JSONArray();
 
 	public VisualisationController() {
-		retrieve("/src/main/resources/config/small/clients.json");
+		retrieve("src/main/resources/config/small/clients.json");
 		customerName= getName();
 
 

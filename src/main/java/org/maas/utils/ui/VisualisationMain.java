@@ -34,9 +34,9 @@ public class VisualisationMain extends Application {
 	public void start(Stage primaryStage) {
 		try {
 			
-			AnchorPane root = (AnchorPane)FXMLLoader.load(getClass().getResource("../fxml/Visualisation_gui.fxml"));
+			AnchorPane root = (AnchorPane)FXMLLoader.load(getClass().getResource("/fxml/Visualisation_gui.fxml"));
 			Scene scene = new Scene(root,400,400);
-			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
+			scene.getStylesheets().add(getClass().getResource("/fxml/application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			primaryStage.setTitle("Customer");
