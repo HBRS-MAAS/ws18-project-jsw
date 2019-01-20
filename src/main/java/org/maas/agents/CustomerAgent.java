@@ -40,7 +40,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import org.maas.CustomerGUI;
+
 
 public class CustomerAgent extends BaseAgent {
 	private JSONArray dataArray = new JSONArray();
@@ -62,7 +62,7 @@ public class CustomerAgent extends BaseAgent {
     protected void setup() {
     	super.setup();
 	
-    	//Wait until order procesing agent set up
+    	//Wait until order processing agent set up
     	try {
     		Thread.sleep(3000);
     	} catch (InterruptedException e) {
@@ -78,7 +78,7 @@ public class CustomerAgent extends BaseAgent {
 		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
 		
 		retrieve("src/main/resources/config/small/clients.json");
-		
+
 		sum_total = getOrder(customerID);
 		latestOrder = whenLatestOrder();
 				
