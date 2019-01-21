@@ -33,7 +33,7 @@ public class Start {
     	
     	for (String id : bakeryID) {
     		agents.add(id + ":org.maas.agents.OrderProcessingAgent");
-    		//break;
+    		break;
     	}   	
     	
     	List<String> cmd = new Vector<>();

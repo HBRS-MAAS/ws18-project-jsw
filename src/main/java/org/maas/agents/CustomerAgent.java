@@ -54,6 +54,7 @@ public class CustomerAgent extends BaseAgent {
 	private int[] latestOrder = new int[2];
 	
 	private AID [] sellerAgents;
+	private AID customerGUI;
 	
 	private int sum_sent; //number of sent orders
 	private int sum_total; //number o total orders
@@ -74,6 +75,8 @@ public class CustomerAgent extends BaseAgent {
 		System.out.println(customerID + " is ready.");
 				
 		getSellers();
+		//getGUI();
+		//System.out.println(customerGUI.getLocalName());
 		
 		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
 		
@@ -104,6 +107,21 @@ public class CustomerAgent extends BaseAgent {
             for (int i = 0; i < result.length; ++i) {
                 sellerAgents[i] = result[i].getName();
             }
+        }
+        catch (FIPAException fe) {
+            fe.printStackTrace();
+        }
+	}
+	
+	protected void getGUI() {
+        DFAgentDescription template = new DFAgentDescription();
+        ServiceDescription sd = new ServiceDescription();
+        sd.setType("CustomerGUI");
+        template.addServices(sd);
+        try {
+            DFAgentDescription[] result = DFService.search(CustomerAgent.this, template);
+            customerGUI = new AID();
+            customerGUI = result[0].getName();
         }
         catch (FIPAException fe) {
             fe.printStackTrace();
@@ -169,7 +187,7 @@ public class CustomerAgent extends BaseAgent {
 			//System.out.println(sum_total);
 			
 			if (process_done && (sum_sent >= sum_total || passTime == true)) {
-				addBehaviour(new shutdown());
+				//addBehaviour(new shutdown());
 			}
 			
 			return isDone;
@@ -225,7 +243,7 @@ public class CustomerAgent extends BaseAgent {
 				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
 				sendMessage(msg);
 				
-				System.out.println(customerID + " send order: " + msg.getContent().toString());
+				//System.out.println(customerID + " send order: " + msg.getContent().toString());
 				
 				// Prepare the template to get proposals
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
@@ -289,11 +307,11 @@ public class CustomerAgent extends BaseAgent {
 					receivedReply++;
 				}
 				
-				System.out.println("Received reply = " + receivedReply);
+				//System.out.println("Received reply = " + receivedReply);
 				
 				if (receivedReply == sellerAgents.length) {
 					//System.out.println(receivedReply);
-					System.out.println("incomingProposal " + incomingProposal);
+					//System.out.println("incomingProposal " + incomingProposal);
 					
 					isDone = true;
 					finished();
@@ -359,7 +377,7 @@ public class CustomerAgent extends BaseAgent {
 						confirm.setContent("Your bakery is too expensive.. :(");
 						send(confirm);
 						
-						System.out.println(customerID + " reject " + id + ": " + confirm.getContent());
+						//System.out.println(customerID + " reject " + id + ": " + confirm.getContent());
 					}
 	            }
 				
@@ -403,7 +421,7 @@ public class CustomerAgent extends BaseAgent {
   					location = dataArray.getJSONObject(i).get("location");
   					
   					//Should the length reduced by one?
-  					System.out.println(customerID + " has " + (orders.length() - 1) + " order");
+  					//System.out.println(customerID + " has " + (orders.length() - 1) + " order");
   					
   					return orders.length() - 1;
   				}
@@ -422,8 +440,8 @@ public class CustomerAgent extends BaseAgent {
   		int[] lastDate = new int[2];
   		
   		try {
-  			System.out.println("get time from orders");
-  			System.out.println(orders.length());
+  			//System.out.println("get time from orders");
+  			//System.out.println(orders.length());
 			for (int i = 0; i < orders.length(); i++) {
 				order_time = orders.getJSONObject(i).getJSONObject("order_date");
 				

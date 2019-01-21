@@ -13,7 +13,7 @@ public class VisualisationMain extends Application {
 	private static final CountDownLatch countDownLatch = new CountDownLatch(1);
 	public static VisualisationMain currentInstance = null;
 	
-	
+	private static boolean closed = false;
 	
 	public static void setInstance(VisualisationMain visulizer) {
         currentInstance = visulizer;
@@ -48,7 +48,15 @@ public class VisualisationMain extends Application {
     @Override
 	public void stop() {
 		System.out.println("Closing application");
-}
+		closed = true;
+		System.out.println("close = " + closed);
+    }
+    
+    public boolean getWindowState() {
+    	//System.out.println("getWindowState called");
+    	//System.out.println("gWS close = " + closed);
+    	return closed;
+    }
 
 }
 
