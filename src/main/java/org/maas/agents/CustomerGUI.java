@@ -42,8 +42,9 @@ import org.maas.utils.ui.*;
 
 
 public class CustomerGUI extends BaseAgent{
-
     private VisualisationMain gui = new VisualisationMain();
+    private VisualisationController ctrl = new VisualisationController();
+    
     public int counter;
 
 	protected void setup() {
@@ -81,17 +82,18 @@ public class CustomerGUI extends BaseAgent{
             }
 			
 			//System.out.println("message server");
-			mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
+			mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 			ACLMessage msg = myAgent.receive(mt);
 			
 			//System.out.println("message server");
 			
             if (msg != null) {
-            	JSONObject incomingOrder = new JSONObject();
-            	incomingOrder = new JSONObject(msg.getContent());
+            	JSONObject sendMsg = new JSONObject();
+            	sendMsg = new JSONObject(msg.getContent());
             	
-            	System.out.println("Customer GUI get " + incomingOrder.toString());
-              
+            	System.out.println("Customer GUI get " + sendMsg.toString());
+            	
+            	ctrl.updateStatus(sendMsg);              
             }
             else {
                 block();

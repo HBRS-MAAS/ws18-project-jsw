@@ -28,7 +28,8 @@ import javafx.stage.Stage;
 
 
 public class VisualisationController implements Initializable  {
-
+	public JSONObject listStatus= new JSONObject();
+	
 	@FXML
     private TextField orderDateTF;
 
@@ -61,8 +62,8 @@ public class VisualisationController implements Initializable  {
 
     }
 	private List<String> customerName;
-	private JSONArray dataArray = new  JSONArray();
-	private JSONArray orders = new  JSONArray();
+	private static JSONArray dataArray = new JSONArray();
+	private JSONArray orders = new JSONArray();
 
 	public VisualisationController() {
 		retrieve("src/main/resources/config/small/clients.json");
@@ -71,7 +72,40 @@ public class VisualisationController implements Initializable  {
 
 	}
 
-
+	public void updateStatus(JSONObject msg) {
+		System.out.println("update status");
+		String id = msg.getString("customer_id");
+		String status = msg.getString("status");
+		String guid = msg.getString("guid");
+		
+		for(int i = 0; i < dataArray.length(); i++){
+			String customerID = dataArray.getJSONObject(i).getString("guid");
+			
+			if (customerID.equals(id)) {
+				//System.out.println("same id");
+				orders = dataArray.getJSONObject(i).getJSONArray("orders");
+				
+				for(int j = 0; j < orders.length(); j++) {
+					//System.out.println(orders.getJSONObject(j).getString("guid"));
+					if (orders.getJSONObject(j).getString("guid").equals(guid)) {
+						JSONObject newStatus = orders.getJSONObject(j).getJSONObject("status");
+						
+						newStatus.put(status, true);
+						
+						orders.getJSONObject(j).put("status", newStatus);
+						//System.out.println(orders.toString());
+						break;
+					}
+				}
+				
+				dataArray.getJSONObject(i).put("orders", orders);
+				//System.out.println(dataArray.getJSONObject(i).toString());
+				break;
+			}
+			
+			System.out.println(i);
+		}		
+	}
 
 	public void retrieve(String fileName) {
 		File file = new File(fileName);
@@ -79,7 +113,7 @@ public class VisualisationController implements Initializable  {
 		String fileContent = "";
 		JSONArray orders = new JSONArray();
 
-		JSONObject listStatus= new JSONObject();
+		
 		listStatus.put("send_order", false);
 		listStatus.put("receive_proposal", false);
 		listStatus.put("receive_order", false);

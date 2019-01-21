@@ -75,7 +75,7 @@ public class CustomerAgent extends BaseAgent {
 		System.out.println(customerID + " is ready.");
 				
 		getSellers();
-		//getGUI();
+		getGUI();
 		//System.out.println(customerGUI.getLocalName());
 		
 		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
@@ -224,10 +224,13 @@ public class CustomerAgent extends BaseAgent {
 		public void action() {
 			// Send the order (message) to all sellers
 			ACLMessage msg = new ACLMessage(ACLMessage.CFP);
+			ACLMessage msgGUI = new ACLMessage(ACLMessage.INFORM);
 							
 			for (int i = 0; i < sellerAgents.length; ++i) {
 				msg.addReceiver(sellerAgents[i]);
 			}
+			
+			msgGUI.addReceiver(customerGUI);
 			
 			//System.out.println("myOrder: " + myOrder.toString());
 			
@@ -249,10 +252,13 @@ public class CustomerAgent extends BaseAgent {
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
 						MessageTemplate.MatchInReplyTo(msg.getReplyWith()));
 				
+				msgGUI.setContent("{status: send_order, customer_id: " + customerID + ", guid: " + orderID + "}");
+				sendMessage(msgGUI);
+				
 				CustomerAgent.this.addBehaviour(new ReceiveProposal(mt, myOrder));
 			} catch (JSONException e) {
 				e.printStackTrace();
-			}
+			}			
 			
 			finished();
 		}		
@@ -280,7 +286,9 @@ public class CustomerAgent extends BaseAgent {
 		
 		@Override
 		public void action() {
-			ACLMessage message = myAgent.receive(myTemplate);				
+			ACLMessage message = myAgent.receive(myTemplate);	
+			ACLMessage msgGUI = new ACLMessage(ACLMessage.INFORM);
+			msgGUI.addReceiver(customerGUI);
 			
 			if (message != null) {
 				//Purchase order reply received
@@ -293,7 +301,7 @@ public class CustomerAgent extends BaseAgent {
 						try {
 							JSONObject proposal = new JSONObject(message.getContent());
 							products = proposal.getJSONObject("products");
-							
+														
 							proposalSender.add(message.getSender());
 							
 							incomingProposal.put(bakeryName, products);
@@ -318,6 +326,11 @@ public class CustomerAgent extends BaseAgent {
 					
 					if (!incomingProposal.isEmpty()) {
 						CustomerAgent.this.addBehaviour(new SendConfirmation(incomingProposal, myOrder, proposalSender));
+						
+						orderID = myOrder.getString("guid");
+						
+						msgGUI.setContent("{status: receive_proposal, customer_id: " + customerID + ", guid: " + orderID + "}");
+						sendMessage(msgGUI);
 					} else {
 						System.out.println("No bakery accept my order.. >_<");
 					}
@@ -370,7 +383,7 @@ public class CustomerAgent extends BaseAgent {
 						confirm.setContent(reOrder.toString());
 						send(confirm);
 						
-						System.out.println(customerID + " accept " + id + ": " + confirm.getContent()); 
+						//System.out.println(customerID + " accept " + id + ": " + confirm.getContent()); 
 					} else {
 						ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
 						confirm.addReceiver(sellers.get(i));
