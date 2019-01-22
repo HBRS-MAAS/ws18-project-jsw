@@ -11,7 +11,8 @@ public class Start {
 	public static void main(String[] args) {
     	List<String> agents = new Vector<>();
     	
-    	agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
+		agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
+		agents.add("CustomerGUI:org.maas.agents.CustomerGUI");
     	
     	Data customer = new Data();
     	customer.retrieve("src/main/resources/config/small/clients.json");
@@ -32,9 +33,8 @@ public class Start {
     	
     	for (String id : bakeryID) {
     		agents.add(id + ":org.maas.agents.OrderProcessingAgent");
-    	}
-    	
-    	
+    		//break;
+    	}   	
     	
     	List<String> cmd = new Vector<>();
     	cmd.add("-agents");
