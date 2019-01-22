@@ -30,6 +30,12 @@ Message exchanges between CustomerAgent and OrderProcessingAgent
 - **receiver**: (expensive) order processing agent
 - **content**: <String>
 
+- Objective: to tell GUI the status of an order
+- **performative**: INFORM
+- **sender**: customer agent
+- **receiver**: customerGUI
+- **content**: {“status”: “send_order”, “customer_id”: “customer-001”, ”guid”: “order-001”}
+
 ## IN MESSAGES
 - **performative**: PROPOSE
 - **sender**: order processing agent

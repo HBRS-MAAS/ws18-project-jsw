@@ -24,7 +24,7 @@ public class Start {
     		
     		//n++;
     		//if (n > 2) {break;}
-    		break;
+    		//break;
     	}
     	
     	Data bakery = new Data();
@@ -33,7 +33,7 @@ public class Start {
     	
     	for (String id : bakeryID) {
     		agents.add(id + ":org.maas.agents.OrderProcessingAgent");
-    		break;
+    		//break;
     	}   	
     	
     	List<String> cmd = new Vector<>();
