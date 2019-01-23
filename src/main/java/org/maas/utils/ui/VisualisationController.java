@@ -108,7 +108,7 @@ public class VisualisationController implements Initializable  {
 				break;
 			}
 			
-			System.out.println(i);
+			//System.out.println(i);
 		}		
 	}
 
