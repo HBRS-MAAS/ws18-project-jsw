@@ -18,7 +18,13 @@ Add a brief description of your project. Make sure to keep this README updated, 
 ## How to run
 Just install gradle and run:
 
-    gradle run
+* Default scenario is small.
+
+	gradle run
+
+* To change scenario, put the name of the scenario name in the argument, e.g. scenario = 5-big-bakeries-100-days. 
+    
+	./gradlew run --args='5-big-bakeries-100-days'
 
 It will automatically get the dependencies and start JADE with the configured agents.
 In case you want to clean you workspace run
@@ -35,7 +41,7 @@ To use this project with eclipse run
 Following are the steps to view the order status using our gui
 * Select the customer name of the one you want to view the status
 * Select the order id
-* If you find 'O' in your status lable that means particular task has been completed otherwise not
-* To exit the you can press the Exit button present
+* If you find 'O' in your status label that means particular task has been completed otherwise not
+* To exit, you can press the Exit button. It will shutdown all agents.
 
 
