@@ -8,7 +8,6 @@ Add a brief description of your project. Make sure to keep this README updated, 
 
 ## Team Members
 * Janhavi Puranik - [@janhavi19](https://github.com/janhavi19)
-* Shahamat Mehdi - [@SSMAbidi](https://github.com/ssmabidi)
 * Widya Aulia - [@widyaaulia](https://github.com/widyaaulia)
 
 ## Dependencies
@@ -31,5 +30,12 @@ To use this project with eclipse run
 
     gradle eclipse
 
-This command will create the necessary eclipse files.
-Afterwards you can import the project folder.
+
+##Visualisation
+Following are the steps to view the order status using our gui
+*Select the customer name of the one you want to view the status
+*Select the order id
+*If you find 'O' in your status lable that means particular task has been completed otherwise not
+*To exit the you can press the Exit button present
+
+
