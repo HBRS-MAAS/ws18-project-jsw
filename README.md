@@ -31,7 +31,7 @@ To use this project with eclipse run
     gradle eclipse
 
 
-##Visualisation
+## Visualisation
 Following are the steps to view the order status using our gui
 * Select the customer name of the one you want to view the status
 * Select the order id
