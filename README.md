@@ -33,9 +33,9 @@ To use this project with eclipse run
 
 ##Visualisation
 Following are the steps to view the order status using our gui
-*Select the customer name of the one you want to view the status
-*Select the order id
-*If you find 'O' in your status lable that means particular task has been completed otherwise not
-*To exit the you can press the Exit button present
+* Select the customer name of the one you want to view the status
+* Select the order id
+* If you find 'O' in your status lable that means particular task has been completed otherwise not
+* To exit the you can press the Exit button present
 
 
