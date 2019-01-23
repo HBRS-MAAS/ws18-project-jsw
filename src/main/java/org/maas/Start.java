@@ -14,6 +14,8 @@ public class Start {
 	private static String scenarioPath = "src/main/resources/config/";
 	
 	public static void main(String[] args) {
+		scenario = args[0];
+		
     	List<String> agents = new Vector<>();
     	
     	VisualisationController ctrl = new VisualisationController();
