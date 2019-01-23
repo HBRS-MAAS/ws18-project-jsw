@@ -44,13 +44,23 @@ public class OrderProcessingAgent extends BaseAgent {
 	
     protected void setup() {
     	super.setup();
+    	
     	bakeryID = getAID().getLocalName();
     	
         System.out.println(bakeryID + " is ready.");
     	
     	register("OrderProcessing", bakeryID);
     	
-    	retrieve("src/main/resources/config/small/bakeries.json");
+    	String scenarioPath = "src/main/resources/config/";
+    	
+    	Object[] args = getArguments();
+		String scenario = "small";
+		
+        if (args != null && args.length > 0) {
+            scenario = (String) args[0];
+        }
+    	
+		retrieve(scenarioPath + scenario + "/bakeries.json");
     	
     	Map<String,List<String>> map = new HashMap();
     	map = getProduct(bakeryID);

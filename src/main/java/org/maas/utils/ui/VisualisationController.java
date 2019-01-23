@@ -64,12 +64,17 @@ public class VisualisationController implements Initializable  {
 	private List<String> customerName;
 	private static JSONArray dataArray = new JSONArray();
 	private JSONArray orders = new JSONArray();
-
+	
+	private static String scenario = "small";
+	private static String scenarioPath = "src/main/resources/config/";
+	
 	public VisualisationController() {
-		retrieve("src/main/resources/config/small/clients.json");
+		retrieve(scenarioPath + scenario + "/clients.json");
 		customerName= getName();
-
-
+	}
+	
+	public void setScenario(String args) {
+		scenario = args;
 	}
 
 	public void updateStatus(JSONObject msg) {

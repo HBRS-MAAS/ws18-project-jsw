@@ -4,18 +4,26 @@ import java.util.List;
 import java.util.Vector;
 import org.maas.utils.*;
 
+import org.maas.utils.ui.*;
+
 public class Start {
 	private static List<String> customerID;
 	private static List<String> bakeryID;
 	
+	private static String scenario = "large-30-days";
+	private static String scenarioPath = "src/main/resources/config/";
+	
 	public static void main(String[] args) {
     	List<String> agents = new Vector<>();
+    	
+    	VisualisationController ctrl = new VisualisationController();
+    	ctrl.setScenario(scenario);
     	
 		agents.add("TimeKeeper:org.maas.agents.TimeKeeper");
 		agents.add("CustomerGUI:org.maas.agents.CustomerGUI");
     	
     	Data customer = new Data();
-    	customer.retrieve("src/main/resources/config/small/clients.json");
+    	customer.retrieve(scenarioPath + scenario + "/clients.json");
     	customerID = customer.getID();
     	
     	int n = 0;
@@ -28,7 +36,7 @@ public class Start {
     	}
     	
     	Data bakery = new Data();
-    	bakery.retrieve("src/main/resources/config/small/bakeries.json");
+    	bakery.retrieve(scenarioPath + scenario + "/bakeries.json");
     	bakeryID = bakery.getID();
     	
     	for (String id : bakeryID) {
@@ -40,7 +48,7 @@ public class Start {
     	cmd.add("-agents");
     	StringBuilder sb = new StringBuilder();
     	for (String a : agents) {
-    		sb.append(a);
+    		sb.append(a + "(" + scenario + ");");
     		sb.append(";");
     	}
     	cmd.add(sb.toString());
