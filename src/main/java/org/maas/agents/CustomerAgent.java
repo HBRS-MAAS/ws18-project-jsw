@@ -254,7 +254,7 @@ public class CustomerAgent extends BaseAgent {
 				msg.setReplyWith("order-"+System.currentTimeMillis()); // Unique value
 				sendMessage(msg);
 				
-				//System.out.println(customerID + " send order: " + msg.getContent().toString());
+				System.out.println(customerID + " send order: " + msg.getContent().toString());
 				
 				// Prepare the template to get proposals
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId(orderID),
@@ -327,7 +327,7 @@ public class CustomerAgent extends BaseAgent {
 				
 				if (receivedReply == sellerAgents.length) {
 					//System.out.println(receivedReply);
-					//System.out.println("incomingProposal " + incomingProposal);
+					System.out.println("incomingProposal " + incomingProposal);
 					
 					isDone = true;
 					finished();
@@ -391,14 +391,14 @@ public class CustomerAgent extends BaseAgent {
 						confirm.setContent(reOrder.toString());
 						send(confirm);
 						
-						//System.out.println(customerID + " accept " + id + ": " + confirm.getContent()); 
+						System.out.println(customerID + " accept " + id + ": " + confirm.getContent()); 
 					} else {
 						ACLMessage confirm = new ACLMessage(ACLMessage.REJECT_PROPOSAL);
 						confirm.addReceiver(sellers.get(i));
 						confirm.setContent("Your bakery is too expensive.. :(");
 						send(confirm);
 						
-						//System.out.println(customerID + " reject " + id + ": " + confirm.getContent());
+						System.out.println(customerID + " reject " + id + ": " + confirm.getContent());
 					}
 	            }
 				
