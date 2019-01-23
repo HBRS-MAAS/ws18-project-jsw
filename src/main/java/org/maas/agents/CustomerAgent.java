@@ -69,8 +69,8 @@ public class CustomerAgent extends BaseAgent {
     	} catch (InterruptedException e) {
     		e.printStackTrace();
     	}
-    	
-		customerID = getAID().getLocalName();	
+    	    	
+    	customerID = getAID().getLocalName();	
 		
 		System.out.println(customerID + " is ready.");
 				
@@ -79,8 +79,16 @@ public class CustomerAgent extends BaseAgent {
 		//System.out.println(customerGUI.getLocalName());
 		
 		//System.out.println(customerName + " will send order to " + sellerAgents.length + " sellers");
+		String scenarioPath = "src/main/resources/config/";
 		
-		retrieve("src/main/resources/config/small/clients.json");
+		Object[] args = getArguments();
+		String scenario = "small";
+		
+        if (args != null && args.length > 0) {
+            scenario = (String) args[0];
+        }
+		
+		retrieve(scenarioPath + scenario + "/clients.json");
 
 		sum_total = getOrder(customerID);
 		latestOrder = whenLatestOrder();
