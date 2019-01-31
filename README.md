@@ -18,7 +18,7 @@ Add a brief description of your project. Make sure to keep this README updated, 
 ## How to run
 Just install gradle and run:
 
-* Default scenario is small.
+* Default scenario is large-30-days.
 
 	gradle run
 
